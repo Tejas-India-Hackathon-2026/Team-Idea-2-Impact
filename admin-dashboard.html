@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Command Center — LocalKart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <!-- REUSABLE HEADER -->
+  <header class="site-header">
+    <div class="container">
+      <div class="header-top">
+        <a href="index.html" class="logo">
+          <div class="logo-icon">L</div>
+          <span>Local<span class="logo-highlight">Kart</span></span>
+        </a>
+
+        <ul class="nav-menu">
+          <li><a href="admin-dashboard.html" class="nav-link active">Admin Panel</a></li>
+        </ul>
+
+        <div class="header-actions">
+          <a href="index.html" class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">Exit Admin</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="container" style="max-width: 900px;">
+      
+      <!-- Top Banner -->
+      <div style="background: #0f172a; color: #fff; border-radius: 14px; padding: 24px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #4ade80;">Platform Governance</span>
+          <h1 style="font-size: 20px; font-weight: 800; margin-top: 2px;">LocalKart Admin Verification & Trust Panel</h1>
+          <p style="font-size: 12px; color: #94a3b8;">Review Seller Verification Requests, Product Proof Videos, Returns & Complaints</p>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 20px;">
+        <div class="card">
+          <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Active Sellers</div>
+          <div style="font-size: 24px; font-weight: 900; color: #0f172a; margin-top: 4px;">5</div>
+        </div>
+        <div class="card">
+          <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Verified Sellers</div>
+          <div style="font-size: 24px; font-weight: 900; color: #16a34a; margin-top: 4px;">5</div>
+        </div>
+        <div class="card">
+          <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Pending Approvals</div>
+          <div style="font-size: 24px; font-weight: 900; color: #d97706; margin-top: 4px;">0</div>
+        </div>
+        <div class="card">
+          <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Complaints</div>
+          <div style="font-size: 24px; font-weight: 900; color: #ef4444; margin-top: 4px;" id="admin-complaint-count">0</div>
+        </div>
+      </div>
+
+      <!-- SELLER VERIFICATION REQUESTS -->
+      <section style="margin-bottom: 24px;">
+        <div class="card">
+          <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 14px;">Seller Verification Requests</h2>
+          <div id="admin-sellers-list" style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- PRODUCT PROOF VIDEO APPROVALS -->
+      <section>
+        <div class="card">
+          <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 14px;">Product Proof Video & Authenticity Requests</h2>
+          <div id="admin-products-list" style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div><strong>LocalKart</strong> — Admin Panel</div>
+        <div>© 2026 LocalKart. Support Local Economy.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script>
+    function renderAdminPanel() {
+      const sellers = getSellersFromStorage();
+      const products = getProductsFromStorage();
+      const complaints = getComplaintsFromStorage();
+
+      const elComp = document.getElementById('admin-complaint-count');
+      if (elComp) elComp.innerText = complaints.length;
+
+      const sContainer = document.getElementById('admin-sellers-list');
+      if (sContainer) {
+        sContainer.innerHTML = sellers.map(s => `
+          <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <img src="${s.avatar}" alt="${s.name}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
+              <div>
+                <strong style="font-size:14px; color:#0f172a;">${s.name} (${s.owner})</strong>
+                <div style="font-size:11px; color:#64748b;">${s.type} • 📍 ${s.locality}</div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="badge badge-verified">Verified Seller ✓</span>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      const pContainer = document.getElementById('admin-products-list');
+      if (pContainer) {
+        pContainer.innerHTML = products.slice(0, 4).map(p => `
+          <div style="border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <img src="${p.image}" alt="${p.title}" style="width:40px; height:40px; border-radius:6px; object-fit:cover;">
+              <div>
+                <strong style="font-size:14px; color:#0f172a;">${p.title}</strong>
+                <div style="font-size:11px; color:#64748b;">Seller: ${p.sellerName} • Video Proof: Attached 🎥</div>
+              </div>
+            </div>
+            <span class="badge badge-verified">Approved ✓</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', renderAdminPanel);
+  </script>
+</body>
+</html>

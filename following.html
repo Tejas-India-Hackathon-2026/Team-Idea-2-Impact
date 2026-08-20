@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Followed Sellers — LocalKart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <!-- REUSABLE HEADER -->
+  <header class="site-header">
+    <div class="container">
+      <div class="header-top">
+        <a href="index.html" class="logo">
+          <div class="logo-icon">L</div>
+          <span>Local<span class="logo-highlight">Kart</span></span>
+        </a>
+
+        <ul class="nav-menu">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="products.html" class="nav-link">Products</a></li>
+          <li><a href="seller.html?id=s1" class="nav-link">Sellers</a></li>
+          <li><a href="wishlist.html" class="nav-link">Wishlist</a></li>
+          <li><a href="following.html" class="nav-link active">Following</a></li>
+        </ul>
+
+        <div class="header-actions">
+          <a href="cart.html" class="btn btn-outline" style="padding: 6px 12px; font-size: 12px;">Cart (<span class="cart-badge">0</span>)</a>
+          <a href="login.html" class="nav-link">Login</a>
+          <a href="signup.html" class="btn btn-primary" style="padding: 6px 14px; font-size: 12px;">Sign Up</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="container" style="max-width: 900px;">
+      <div style="margin-bottom: 24px;">
+        <h1 style="font-size: 24px; font-weight: 800; color: var(--text-dark);">Sellers You Follow</h1>
+        <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Get updates and new product launches from local makers you love</p>
+      </div>
+
+      <div id="following-sellers-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+        <!-- Rendered dynamically by JS -->
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div><strong>LocalKart</strong> — “Bringing Local Sellers Closer to Local Buyers.”</div>
+        <div>© 2026 LocalKart. Support Local Economy.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/seller.js"></script>
+  <script>
+    function renderFollowingPage() {
+      const grid = document.getElementById('following-sellers-grid');
+      if (!grid) return;
+
+      const sellers = getSellersFromStorage();
+      const userLoc = LocationManager.getSavedLocation() || { latitude: 12.934532, longitude: 77.624389 };
+
+      if (!sellers || sellers.length === 0) {
+        grid.innerHTML = `
+          <div style="grid-column: 1 / -1; background: var(--bg-white); border: 1px solid var(--border-color); border-radius: 12px; padding: 40px; text-align: center;">
+            <h3 style="font-size: 16px; font-weight: 800; color: var(--text-dark); margin-bottom: 6px;">You are not following any sellers yet</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Discover local artisans and farmers in your neighborhood.</p>
+            <a href="seller.html?id=s1" class="btn btn-primary">Discover Local Sellers</a>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = sellers.map(s => `
+        <div class="card" style="display:flex; flex-direction:column; gap:12px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <img src="${s.avatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800'}" alt="${s.name}" style="width:48px; height:48px; border-radius:50%; object-fit:cover;">
+            <div>
+              <strong style="font-size:15px; color:var(--text-dark);">${s.name}</strong>
+              <div style="font-size:11px; color:var(--text-muted);">${s.type} • 📍 Near ${s.locality || 'Bengaluru'}</div>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-light); border:1px solid var(--border-color); padding:8px 12px; border-radius:8px; font-size:12px;">
+            <div>⭐ <strong>${s.rating || 4.8}</strong> (${s.followerCount || '1,248'} Followers)</div>
+            <div style="color:var(--primary-green); font-weight:800;">Quality: ${s.qualityScore || 94}/100</div>
+          </div>
+
+          <div style="display:flex; gap:8px; margin-top:4px;">
+            <a href="seller.html?id=${s.id}" class="btn btn-primary" style="flex:1; text-align:center;">View Shop Page</a>
+            <button onclick="showToast('You are following ${s.name.replace(/'/g, "\\'")}')" class="btn btn-secondary" style="color:var(--primary-green-dark); font-weight:800;">
+              ✓ Following
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', renderFollowingPage);
+  </script>
+</body>
+</html>

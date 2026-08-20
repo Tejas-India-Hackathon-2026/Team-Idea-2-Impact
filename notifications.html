@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notification Center — LocalKart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <!-- REUSABLE HEADER -->
+  <header class="site-header">
+    <div class="container">
+      <div class="header-top">
+        <a href="index.html" class="logo">
+          <div class="logo-icon">L</div>
+          <span>Local<span class="logo-highlight">Kart</span></span>
+        </a>
+
+        <ul class="nav-menu">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="products.html" class="nav-link">Products</a></li>
+          <li><a href="seller.html?id=s1" class="nav-link">Sellers</a></li>
+          <li><a href="wishlist.html" class="nav-link">Wishlist</a></li>
+          <li><a href="notifications.html" class="nav-link active">🔔 Notifications (<span id="unread-count-badge">3</span>)</a></li>
+        </ul>
+
+        <div class="header-actions">
+          <a href="cart.html" class="btn btn-outline" style="padding: 6px 12px; font-size: 12px;">Cart (<span class="cart-badge">0</span>)</a>
+          <a href="login.html" class="nav-link">Login</a>
+          <a href="signup.html" class="btn btn-primary" style="padding: 6px 14px; font-size: 12px;">Sign Up</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="container" style="max-width:800px;">
+      
+      <!-- HEADER & ACTIONS -->
+      <div style="margin-bottom: 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+        <div>
+          <h1 style="font-size: 24px; font-weight: 800; color: var(--text-dark);">Notification Center</h1>
+          <p style="font-size: 13px; color: var(--text-muted); margin-top: 2px;">Realtime updates for orders, customization quotes, wishlist & followed sellers</p>
+        </div>
+
+        <div style="display:flex; gap:8px;">
+          <button onclick="markAllNotificationsReadAction()" class="btn btn-secondary btn-sm" style="font-size:12px;">✓ Mark all as read</button>
+          <button onclick="openNotificationSettingsModal()" class="btn btn-outline btn-sm" style="font-size:12px;">⚙️ Preferences</button>
+        </div>
+      </div>
+
+      <!-- NOTIFICATIONS CONTAINER -->
+      <div id="notifications-list" style="display:flex; flex-direction:column; gap:12px;">
+        <!-- Rendered dynamically by JS -->
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div><strong>LocalKart</strong> — “Bringing Local Sellers Closer to Local Buyers.”</div>
+        <div>© 2026 LocalKart. Support Local Economy.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script>
+    let sampleNotifications = [
+      { id: "n1", type: "NEW_PRODUCT", title: "🎨 Riya Handicrafts added a new product", message: "Handwoven Bamboo Basket is now live near Koramangala!", isRead: false, time: "2 minutes ago", targetUrl: "product-details.html?id=p2" },
+      { id: "n2", type: "CUSTOMIZATION_UPDATE", title: "📝 Custom Quote Received", message: "Riya Sharma sent a custom quote (₹600, 5–7 days) for your basket customization.", isRead: false, time: "1 hour ago", targetUrl: "product-details.html?id=p1" },
+      { id: "n3", type: "PRICE_CHANGE", title: "📉 Price Dropped on Wishlisted Item", message: "Handmade Terracotta Vase is now available at ₹450 (Original ₹500).", isRead: false, time: "3 hours ago", targetUrl: "wishlist.html" },
+      { id: "n4", type: "ORDER_UPDATE", title: "🚚 Order #LK10025 Shipped", message: "Seller has shipped your order! Track real-time progress on your orders page.", isRead: true, time: "Yesterday", targetUrl: "orders.html" }
+    ];
+
+    function renderNotificationsPage() {
+      const listContainer = document.getElementById('notifications-list');
+      if (!listContainer) return;
+
+      const unread = sampleNotifications.filter(n => !n.isRead).length;
+      const badge = document.getElementById('unread-count-badge');
+      if (badge) badge.innerText = unread;
+
+      if (sampleNotifications.length === 0) {
+        listContainer.innerHTML = `
+          <div style="background:var(--bg-white); border:1px solid var(--border-color); border-radius:12px; padding:40px; text-align:center;">
+            <h3 style="font-size:16px; font-weight:800; color:var(--text-dark);">No notifications right now</h3>
+            <p style="font-size:13px; color:var(--text-muted); margin-top:4px;">You're all caught up!</p>
+          </div>
+        `;
+        return;
+      }
+
+      listContainer.innerHTML = sampleNotifications.map(n => `
+        <div onclick="clickNotificationItem('${n.id}', '${n.targetUrl}')" class="card" style="background:${n.isRead ? 'var(--bg-white)' : '#f0fdf4'}; border:1px solid ${n.isRead ? 'var(--border-color)' : '#bbf7d0'}; border-radius:12px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; transition:all 0.2s;">
+          <div style="display:flex; align-items:flex-start; gap:12px;">
+            <span style="font-size:20px; line-height:1;">${n.isRead ? '✉️' : '🔔'}</span>
+            <div>
+              <div style="font-size:14px; font-weight:800; color:var(--text-dark);">${n.title}</div>
+              <div style="font-size:12px; color:var(--text-medium); margin-top:2px;">${n.message}</div>
+              <div style="font-size:10px; color:var(--text-muted); margin-top:4px;">${n.time}</div>
+            </div>
+          </div>
+          ${!n.isRead ? '<span style="width:8px; height:8px; border-radius:50%; background:#22c55e;"></span>' : ''}
+        </div>
+      `).join('');
+    }
+
+    function clickNotificationItem(id, url) {
+      const item = sampleNotifications.find(n => n.id === id);
+      if (item) item.isRead = true;
+      renderNotificationsPage();
+      window.location.href = url;
+    }
+
+    function markAllNotificationsReadAction() {
+      sampleNotifications.forEach(n => n.isRead = true);
+      showToast('All notifications marked as read.');
+      renderNotificationsPage();
+    }
+
+    function openNotificationSettingsModal() {
+      let modal = document.getElementById('notif-settings-modal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'notif-settings-modal';
+        modal.style.cssText = 'position:fixed; inset:0; background:rgba(15,23,42,0.8); backdrop-filter:blur(4px); z-index:99995; display:flex; align-items:center; justify-content:center; padding:20px;';
+        document.body.appendChild(modal);
+      }
+
+      modal.innerHTML = `
+        <div style="background:var(--bg-white); color:var(--text-dark); border-radius:16px; max-width:440px; width:100%; padding:24px; box-shadow:0 20px 40px rgba(0,0,0,0.3); display:flex; flex-direction:column; gap:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:10px;">
+            <strong style="font-size:16px; color:var(--text-dark);">⚙️ Notification Preferences</strong>
+            <button onclick="document.getElementById('notif-settings-modal').style.display='none';" style="background:none; border:none; font-size:18px; color:var(--text-muted); cursor:pointer;">✕</button>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:12px; font-size:13px;">
+            <label style="display:flex; justify-content:space-between; align-items:center;">
+              <span>Followed Seller New Products</span>
+              <input type="checkbox" checked style="accent-color:var(--primary-green);">
+            </label>
+            <label style="display:flex; justify-content:space-between; align-items:center;">
+              <span>Wishlist Price Change Alerts</span>
+              <input type="checkbox" checked style="accent-color:var(--primary-green);">
+            </label>
+            <label style="display:flex; justify-content:space-between; align-items:center;">
+              <span>Back in Stock Alerts</span>
+              <input type="checkbox" checked style="accent-color:var(--primary-green);">
+            </label>
+            <label style="display:flex; justify-content:space-between; align-items:center;">
+              <span>Customization & Order Updates</span>
+              <input type="checkbox" checked disabled style="accent-color:var(--primary-green);">
+            </label>
+          </div>
+
+          <button onclick="showToast('Notification preferences saved!'); document.getElementById('notif-settings-modal').style.display='none';" class="btn btn-primary btn-block">Save Preferences</button>
+        </div>
+      `;
+
+      modal.style.display = 'flex';
+    }
+
+    document.addEventListener('DOMContentLoaded', renderNotificationsPage);
+  </script>
+</body>
+</html>

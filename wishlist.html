@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Wishlist — LocalKart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <!-- REUSABLE HEADER -->
+  <header class="site-header">
+    <div class="container">
+      <div class="header-top">
+        <a href="index.html" class="logo">
+          <div class="logo-icon">L</div>
+          <span>Local<span class="logo-highlight">Kart</span></span>
+        </a>
+
+        <ul class="nav-menu">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="products.html" class="nav-link">Products</a></li>
+          <li><a href="seller.html?id=s1" class="nav-link">Sellers</a></li>
+          <li><a href="wishlist.html" class="nav-link active">Wishlist (<span class="wishlist-badge">0</span>)</a></li>
+        </ul>
+
+        <div class="header-actions">
+          <a href="cart.html" class="btn btn-outline" style="padding: 6px 12px; font-size: 12px;">Cart (<span class="cart-badge">0</span>)</a>
+          <a href="login.html" class="nav-link">Login</a>
+          <a href="signup.html" class="btn btn-primary" style="padding: 6px 14px; font-size: 12px;">Sign Up</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="container">
+      <div style="margin-bottom: 24px;">
+        <h1 style="font-size: 24px; font-weight: 800; color: #0f172a;">My Saved Wishlist</h1>
+        <p style="font-size: 13px; color: #64748b; margin-top: 4px;">Saved items from local neighborhood artisans and sellers</p>
+      </div>
+
+      <div id="wishlist-grid" class="product-grid">
+        <!-- Rendered dynamically by JS -->
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div><strong>LocalKart</strong> — “Bringing Local Sellers Closer to Local Buyers.”</div>
+        <div>© 2026 LocalKart. Support Local Economy.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/products.js"></script>
+  <script>
+    function renderWishlistPage() {
+      const grid = document.getElementById('wishlist-grid');
+      if (!grid) return;
+
+      const wishlistIds = getWishlistFromStorage();
+      const products = getProductsFromStorage();
+      const items = products.filter(p => wishlistIds.includes(p.id));
+
+      if (items.length === 0) {
+        grid.innerHTML = `
+          <div style="grid-column: 1 / -1; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 40px; text-align: center;">
+            <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 6px;">Your Wishlist is Empty</h3>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">Click ♡ Wishlist on any local product to save it for later.</p>
+            <a href="products.html" class="btn btn-primary">Explore Products</a>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = items.map(p => `
+        <div class="product-card">
+          <div>
+            <img src="${p.image}" alt="${p.title}" class="product-img" onclick="openProductDetails('${p.id}')" style="cursor:pointer;">
+            <div class="product-seller">By: <strong style="color:#0f172a;">${p.sellerName}</strong></div>
+            <h3 class="product-title" onclick="openProductDetails('${p.id}')" style="cursor:pointer;">${p.title}</h3>
+            <div class="product-meta">
+              <span class="price">₹${p.price}</span>
+              <span class="rating">⭐ ${p.rating} (Quality: ${p.qualityScore}/100)</span>
+            </div>
+            <div class="delivery-badge">✓ Verified Purchase Eligible (📍 ${p.distanceKm} km)</div>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <button onclick="buyNowClick('${p.id}')" class="btn btn-primary" style="flex:1;">Buy Now</button>
+            <button onclick="toggleWishlistStorage('${p.id}'); renderWishlistPage();" class="btn btn-outline" style="color:#ef4444;">Remove</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', renderWishlistPage);
+  </script>
+</body>
+</html>

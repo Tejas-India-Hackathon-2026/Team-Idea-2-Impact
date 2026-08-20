@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Local Products Catalog — LocalKart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <!-- REUSABLE HEADER -->
+  <header class="site-header">
+    <div class="container">
+      <div class="header-top">
+        <a href="index.html" class="logo">
+          <div class="logo-icon">L</div>
+          <span>Local<span class="logo-highlight">Kart</span></span>
+        </a>
+
+        <ul class="nav-menu">
+          <li><a href="index.html" class="nav-link" data-i18n="home">Home</a></li>
+          <li><a href="products.html" class="nav-link active" data-i18n="products">Products</a></li>
+          <li><a href="seller.html?id=s1" class="nav-link" data-i18n="sellers">Sellers</a></li>
+          <li><a href="wishlist.html" class="nav-link"><span data-i18n="wishlist">Wishlist</span> (<span class="wishlist-badge">0</span>)</a></li>
+        </ul>
+
+        <div class="header-actions">
+          <!-- LANGUAGE SELECTOR ENGINE -->
+          <select onchange="setLanguage(this.value)" class="form-select" style="padding: 4px 6px; font-size: 11px; font-weight: 700;">
+            <option value="en">English</option>
+            <option value="hi">हिंदी (Hindi)</option>
+            <option value="bn">বাংলা (Bengali)</option>
+            <option value="mr">मराठी (Marathi)</option>
+            <option value="ta">தமிழ் (Tamil)</option>
+            <option value="te">తెలుగు (Telugu)</option>
+          </select>
+
+          <!-- THEME SELECTOR ENGINE -->
+          <div class="theme-selector-box">
+            <span style="color:var(--text-muted);">Theme:</span>
+            <button onclick="setTheme('light')" class="theme-btn" data-theme-val="light">Light</button>
+            <button onclick="setTheme('dark')" class="theme-btn" data-theme-val="dark">Dark</button>
+            <button onclick="setTheme('system')" class="theme-btn active" data-theme-val="system">System</button>
+          </div>
+
+          <a href="cart.html" class="btn btn-outline" style="padding: 6px 12px; font-size: 12px;"><span data-i18n="cart">Cart</span> (<span class="cart-badge">0</span>)</a>
+          <a href="login.html" class="nav-link" data-i18n="login">Login</a>
+          <a href="signup.html" class="btn btn-primary" style="padding: 6px 14px; font-size: 12px;" data-i18n="signUp">Sign Up</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Location Indicator Bar -->
+    <div class="location-bar">
+      <div class="container">
+        <div class="location-inner">
+          <div class="location-info">
+            <span id="header-loc-display">📍 <strong>Your Location:</strong> Koramangala 4th Block, Bengaluru (PIN: 560034)</span>
+          </div>
+          <button class="location-change-btn" onclick="openLocationModal()" data-i18n="changeLocation">Change Location</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <div class="container">
+      
+      <!-- PAGE TITLE & VOICE SEARCH (PARTS 8 & 25) -->
+      <div style="margin-bottom: 24px; display: flex; flex-direction: column; gap: 12px;">
+        <h1 style="font-size: 24px; font-weight: 800; color: var(--text-dark);" data-i18n="products">Local Products Catalog</h1>
+        
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+          <input type="text" id="search-input" onkeyup="handleSearchInput()" placeholder="Search basket, टोकरी, pottery, honey, pickles, dupatta..." class="form-input" style="flex: 1; max-width: 450px;">
+          
+          <button onclick="startVoiceInput('search-input', 'voice-status')" class="btn btn-secondary" style="font-weight:700;">
+            🎙️ Voice Search
+          </button>
+
+          <!-- SORT SELECTOR -->
+          <select id="sort-by-select" onchange="handleSearchInput()" class="form-select" style="font-weight:700;">
+            <option value="recommended">Sort: Recommended</option>
+            <option value="nearest">Sort: Nearest First</option>
+            <option value="highest_rated">Sort: Highest Rated</option>
+            <option value="quality_score">Sort: Best Quality Score</option>
+            <option value="lowest_price">Sort: Lowest Price</option>
+          </select>
+        </div>
+        <div id="voice-status" style="font-size: 12px; color: var(--primary-green-dark); font-weight: 600;"></div>
+      </div>
+
+      <!-- CATEGORY FILTERS -->
+      <div style="margin-bottom: 24px;">
+        <div class="category-pills">
+          <button onclick="filterByCategory('all', this)" class="cat-pill active" data-category="all" data-i18n="allCategories">All Categories</button>
+          <button onclick="filterByCategory('Handmade', this)" class="cat-pill" data-category="Handmade">🎨 Handmade</button>
+          <button onclick="filterByCategory('Farm Products', this)" class="cat-pill" data-category="Farm Products">🌾 Farm Products</button>
+          <button onclick="filterByCategory('Clothing', this)" class="cat-pill" data-category="Clothing">👗 Clothing</button>
+          <button onclick="filterByCategory('Food', this)" class="cat-pill" data-category="Food">🍯 Food</button>
+        </div>
+      </div>
+
+      <!-- PRODUCTS GRID -->
+      <div id="products-catalog-grid" class="product-grid">
+        <!-- Rendered by js/products.js -->
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div><strong>LocalKart</strong> — “Bringing Local Sellers Closer to Local Buyers.”</div>
+        <div>© 2026 LocalKart. Support Local Economy.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/products.js"></script>
+  <script src="js/lang.js"></script>
+  <script src="js/voice.js"></script>
+</body>
+</html>
