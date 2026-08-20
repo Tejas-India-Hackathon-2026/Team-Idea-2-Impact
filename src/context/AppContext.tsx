@@ -397,9 +397,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return false;
       }
       showNotification(`OTP sent to ${phone}: ${data.demo_otp || '123456'}`);
+      setActiveScreenState('verify_otp');
       return true;
     } catch (err) {
       showNotification("OTP Code: 123456");
+      setActiveScreenState('verify_otp');
       return true;
     }
   };
