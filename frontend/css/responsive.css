@@ -1,0 +1,117 @@
+/* 
+  LocalKart — Responsive Stylesheet
+  Media Queries for Mobile (320px–767px), Tablet (768px–1023px) & Desktop (1024px+)
+  Enforces Medium Balanced Image Sizing (object-fit: contain) across viewports
+*/
+
+/* Laptops & Tablets (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .product-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .details-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .details-img-container {
+    max-height: 260px;
+    max-width: 300px;
+  }
+
+  .details-img-container img {
+    max-height: 240px;
+    object-fit: contain;
+  }
+}
+
+/* Mobile Devices (320px - 767px) */
+@media (max-width: 767px) {
+  .hero-section {
+    grid-template-columns: 1fr;
+    padding: 16px;
+    gap: 16px;
+  }
+  
+  .hero-title {
+    font-size: 20px;
+  }
+  
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  
+  .header-top {
+    flex-wrap: wrap;
+    gap: 8px;
+    height: auto;
+    padding: 8px 0;
+  }
+
+  .nav-menu {
+    display: flex;
+    gap: 10px;
+    font-size: 11px;
+  }
+
+  .container {
+    padding: 0 10px;
+  }
+
+  /* Compact Product Details View on Mobile (Medium Balanced Image) */
+  .details-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .details-img-container {
+    max-height: 220px;
+    max-width: 240px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 8px;
+  }
+
+  .details-img-container img {
+    max-height: 200px;
+    object-fit: contain;
+  }
+
+  .cart-table th:nth-child(4),
+  .cart-table td:nth-child(4) {
+    display: none;
+  }
+
+  /* Seller Portal Responsive Controls */
+  .seller-portal-layout {
+    flex-direction: column !important;
+  }
+
+  .seller-sidebar {
+    display: none !important;
+  }
+
+  .seller-mobile-tab-bar {
+    display: flex !important;
+  }
+}
+
+/* Small Screens (under 480px) */
+@media (max-width: 480px) {
+  .product-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-title {
+    font-size: 18px;
+  }
+
+  .product-img {
+    max-height: 160px;
+    object-fit: contain;
+  }
+}
