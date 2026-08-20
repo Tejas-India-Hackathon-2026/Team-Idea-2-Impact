@@ -1,0 +1,47 @@
+# Environments & Dependencies
+.venv/
+venv/
+env/
+ENV/
+node_modules/
+
+# Environment Variables & Secrets
+.env
+.env.*
+*.env
+secrets/
+*.pem
+*.key
+*.crt
+*.pfx
+*.p12
+
+# Database & Runtime Data
+*.db
+*.sqlite
+*.sqlite3
+database/*.db
+
+# Python cache & build outputs
+__pycache__/
+*.py[cod]
+*$py.class
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+
+# Logs & Temporary files
+*.log
+auto-commit.log
+tmp/
+temp/
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/settings.json
+.antigravity/
+.gemini/
