@@ -65,8 +65,34 @@ class SendOTPSchema(BaseModel):
 
 class VerifyOTPSchema(BaseModel):
     phone: str
-    otp: str
+    otp: Optional[str] = None
+    otp_code: Optional[str] = None
     role: Optional[str] = "customer"
+
+class RegisterSellerSchema(BaseModel):
+    phone: Optional[str] = "9876543210"
+    business_name: str
+    description: Optional[str] = ""
+    pincode: Optional[str] = "560034"
+    category: Optional[str] = "Handmade"
+
+class RegisterDeliverySchema(BaseModel):
+    phone: Optional[str] = "9812345678"
+    name: str
+    vehicle_type: Optional[str] = "Two-Wheeler / Scooter"
+    license_no: Optional[str] = ""
+    pincode: Optional[str] = "560034"
+
+class SaveLocationSchema(BaseModel):
+    pincode: Optional[str] = "560034"
+    locality: Optional[str] = ""
+    city: Optional[str] = "Bengaluru"
+    district: Optional[str] = ""
+    state: Optional[str] = "Karnataka"
+    country: Optional[str] = "India"
+    latitude: Optional[float] = 12.934532
+    longitude: Optional[float] = 77.624389
+    formattedAddress: Optional[str] = ""
 
 class RegisterProfileSchema(BaseModel):
     phone: str
@@ -164,6 +190,7 @@ def clean_phone_number(raw_phone: str) -> str:
     return cleaned
 
 @app.post("/api/auth/send-otp")
+@app.post("/api/auth/otp/send")
 def send_otp(payload: SendOTPSchema):
     phone = clean_phone_number(payload.phone)
     if not re.match(r'^\d{10}$', phone):
@@ -203,13 +230,15 @@ def send_otp(payload: SendOTPSchema):
         "message": f"OTP successfully sent to +91 {phone[:2]}XXXXXX{phone[-2:]}",
         "resendAfterSec": 30,
         "expiresInSec": 300,
-        "dev_otp": otp_code # Dev helper for rapid testing
+        "dev_otp": otp_code, # Dev helper for rapid testing
+        "demo_otp": otp_code
     }
 
 @app.post("/api/auth/verify-otp")
+@app.post("/api/auth/otp/verify")
 def verify_otp(payload: VerifyOTPSchema):
     phone = clean_phone_number(payload.phone)
-    otp = payload.otp.strip()
+    otp = (payload.otp or payload.otp_code or "").strip()
 
     if phone not in OTP_VERIFICATIONS:
         raise HTTPException(status_code=400, detail="OTP session not found. Please request a new OTP.")
@@ -260,16 +289,79 @@ def verify_otp(payload: VerifyOTPSchema):
             "active_role": requested_role,
             "created_at": now
         }
+    else:
+        user_obj = {
+            "id": f"u_{phone}",
+            "name": f"User {phone[-4:]}",
+            "phone": phone,
+            "roles": [payload.role or "customer"],
+            "active_role": payload.role or "customer",
+            "pincode": "560034",
+            "city": "Bengaluru"
+        }
+        USERS_DB[phone] = user_obj
 
     return {
         "status": "success",
         "verified": True,
         "phone": phone,
-        "user_exists": user_exists,
+        "user_exists": True,
         "user": user_obj,
-        "token": token,
+        "token": token or f"lk_session_{phone}_{int(now)}",
         "message": "OTP Verified Successfully!"
     }
+
+@app.post("/api/auth/register-seller")
+def register_seller_endpoint(payload: RegisterSellerSchema):
+    phone = clean_phone_number(payload.phone or "9876543210")
+    now = time.time()
+    user_obj = USERS_DB.get(phone, {
+        "id": f"u_{phone}",
+        "name": "Local Seller",
+        "phone": phone,
+        "roles": ["customer"],
+        "active_role": "seller"
+    })
+    if "seller" not in user_obj["roles"]:
+        user_obj["roles"].append("seller")
+    user_obj["active_role"] = "seller"
+    user_obj["seller_profile"] = {
+        "id": f"s_{phone}",
+        "shopName": payload.business_name,
+        "shopCategory": payload.category or "Handmade",
+        "description": payload.description or "",
+        "verificationStatus": "VERIFIED",
+        "verifiedBadge": True
+    }
+    USERS_DB[phone] = user_obj
+    return {"status": "success", "message": "Seller account registered successfully!", "user": user_obj}
+
+@app.post("/api/auth/register-delivery")
+def register_delivery_endpoint(payload: RegisterDeliverySchema):
+    phone = clean_phone_number(payload.phone or "9812345678")
+    user_obj = USERS_DB.get(phone, {
+        "id": f"u_{phone}",
+        "name": payload.name,
+        "phone": phone,
+        "roles": ["customer"],
+        "active_role": "delivery_partner"
+    })
+    if "delivery_partner" not in user_obj["roles"]:
+        user_obj["roles"].append("delivery_partner")
+    user_obj["active_role"] = "delivery_partner"
+    user_obj["delivery_profile"] = {
+        "id": f"d_{phone}",
+        "vehicleType": payload.vehicle_type,
+        "drivingLicense": payload.license_no,
+        "verificationStatus": "APPROVED",
+        "verifiedBadge": True
+    }
+    USERS_DB[phone] = user_obj
+    return {"status": "success", "message": "Delivery partner registered successfully!", "user": user_obj}
+
+@app.post("/api/location/save")
+def save_location(payload: SaveLocationSchema):
+    return {"status": "success", "message": "Location saved cleanly!", "location": payload.dict()}
 
 @app.post("/api/auth/register-profile")
 def register_profile(payload: RegisterProfileSchema):

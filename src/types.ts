@@ -138,11 +138,25 @@ export interface Product {
   isHandmade?: boolean;
   isRecentlyAdded?: boolean;
   tags: string[];
+  customization?: {
+    customText?: string;
+    customInstructions?: string;
+    color?: string;
+    size?: string;
+    customImageUrl?: string;
+  };
 }
 
 export interface CartItem {
   product: Product;
   quantity: number;
+  customization?: {
+    customText?: string;
+    customInstructions?: string;
+    color?: string;
+    size?: string;
+    customImageUrl?: string;
+  };
 }
 
 export type DeliveryMethod = 'seller' | 'community' | 'pickup';

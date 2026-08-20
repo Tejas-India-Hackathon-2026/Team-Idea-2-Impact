@@ -1,6 +1,11 @@
 -- LocalKart Complete Schema (PostgreSQL & SQLite Compatible)
--- Includes Users, Sellers, Delivery Partners, Products, Orders, Order Items, Delivery Requests, Payments, Notifications, Reviews, Review Media, Review Reports
+-- Includes Users, Sellers, Delivery Partners, Products, Orders, Order Items, Delivery Requests, Payments, Notifications, Reviews, Review Media, Review Reports, Wishlists, Followers, Customization
 
+DROP TABLE IF EXISTS customization_requests CASCADE;
+DROP TABLE IF EXISTS seller_followers CASCADE;
+DROP TABLE IF EXISTS wishlists CASCADE;
+DROP TABLE IF EXISTS return_requests CASCADE;
+DROP TABLE IF EXISTS complaints CASCADE;
 DROP TABLE IF EXISTS review_reports CASCADE;
 DROP TABLE IF EXISTS review_media CASCADE;
 DROP TABLE IF EXISTS reviews CASCADE;
@@ -13,6 +18,7 @@ DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS delivery_partners CASCADE;
 DROP TABLE IF EXISTS sellers CASCADE;
 DROP TABLE IF EXISTS otp_verifications CASCADE;
+DROP TABLE IF EXISTS user_locations CASCADE;
 DROP TABLE IF EXISTS delivery_partner_profiles CASCADE;
 DROP TABLE IF EXISTS seller_profiles CASCADE;
 DROP TABLE IF EXISTS customer_profiles CASCADE;
@@ -79,6 +85,8 @@ CREATE TABLE otp_verifications (
     otp_code VARCHAR(6) NOT NULL,
     expires_at TIMESTAMP NOT NULL,
     is_verified BOOLEAN DEFAULT FALSE,
+    attempts INT DEFAULT 0,
+    resend_cooldown TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -92,7 +100,8 @@ CREATE TABLE sellers (
     pincode VARCHAR(10) NOT NULL,
     self_delivery BOOLEAN DEFAULT TRUE,
     delivery_radius INT DEFAULT 5, -- in kilometers
-    rating DECIMAL(3, 2) DEFAULT 4.5,
+    rating DECIMAL(3, 2) DEFAULT 4.8,
+    quality_score DECIMAL(3, 2) DEFAULT 4.9, -- Calculated metric (verified rating, return rate, complaint rate)
     verified BOOLEAN DEFAULT TRUE,
     approval_status VARCHAR(30) DEFAULT 'Approved', -- Pending, Approved, Rejected
     latitude DECIMAL(9, 6) DEFAULT 12.934532,
@@ -127,9 +136,19 @@ CREATE TABLE products (
     name VARCHAR(150) NOT NULL,
     description TEXT,
     price DECIMAL(10, 2) NOT NULL,
+    original_price DECIMAL(10, 2),
     category VARCHAR(50) NOT NULL,
     quantity INT DEFAULT 10,
     image TEXT,
+    making_images TEXT, -- Comma-separated or JSON list of process photos
+    short_video TEXT, -- Video proof url
+    is_handmade BOOLEAN DEFAULT TRUE,
+    is_customizable BOOLEAN DEFAULT FALSE,
+    customization_instructions TEXT,
+    prep_time VARCHAR(50) DEFAULT 'Ready to Ship',
+    material VARCHAR(100),
+    weight VARCHAR(50),
+    size VARCHAR(50),
     delivery_available BOOLEAN DEFAULT TRUE,
     pickup_available BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -157,6 +176,18 @@ CREATE TABLE order_items (
     product_id INT REFERENCES products(id) ON DELETE CASCADE,
     quantity INT NOT NULL,
     price DECIMAL(10, 2) NOT NULL
+);
+
+-- 6B. CUSTOMIZATION REQUESTS TABLE
+CREATE TABLE customization_requests (
+    id SERIAL PRIMARY KEY,
+    order_item_id INT REFERENCES order_items(id) ON DELETE CASCADE,
+    custom_text TEXT,
+    custom_instructions TEXT,
+    color VARCHAR(50),
+    size VARCHAR(50),
+    custom_image_url TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 7. DELIVERY REQUESTS TABLE
@@ -191,7 +222,25 @@ CREATE TABLE payments (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 9. NOTIFICATIONS TABLE
+-- 9. WISHLISTS TABLE
+CREATE TABLE wishlists (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    product_id INT REFERENCES products(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, product_id)
+);
+
+-- 9B. SELLER FOLLOWERS TABLE
+CREATE TABLE seller_followers (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    seller_id INT REFERENCES sellers(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, seller_id)
+);
+
+-- 10. NOTIFICATIONS TABLE
 CREATE TABLE notifications (
     id SERIAL PRIMARY KEY,
     user_id INT REFERENCES users(id) ON DELETE CASCADE,
@@ -202,7 +251,7 @@ CREATE TABLE notifications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 10. REVIEWS TABLE
+-- 11. REVIEWS TABLE
 CREATE TABLE reviews (
     id SERIAL PRIMARY KEY,
     customer_id INT REFERENCES users(id) ON DELETE CASCADE,
@@ -214,10 +263,11 @@ CREATE TABLE reviews (
     verified_purchase BOOLEAN DEFAULT TRUE,
     status VARCHAR(30) DEFAULT 'Approved', -- Pending, Approved, Rejected
     helpful_count INT DEFAULT 0,
+    seller_response TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 11. REVIEW MEDIA TABLE (Photos & Short Videos)
+-- 12. REVIEW MEDIA TABLE (Photos & Short Videos)
 CREATE TABLE review_media (
     id SERIAL PRIMARY KEY,
     review_id INT REFERENCES reviews(id) ON DELETE CASCADE,
@@ -227,7 +277,7 @@ CREATE TABLE review_media (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 12. REVIEW REPORTS TABLE
+-- 13. REVIEW REPORTS TABLE
 CREATE TABLE review_reports (
     id SERIAL PRIMARY KEY,
     review_id INT REFERENCES reviews(id) ON DELETE CASCADE,
@@ -237,7 +287,7 @@ CREATE TABLE review_reports (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 13. COMPLAINTS & DISPUTES TABLE
+-- 14. COMPLAINTS & DISPUTES TABLE
 CREATE TABLE complaints (
     id SERIAL PRIMARY KEY,
     complaint_code VARCHAR(30) UNIQUE NOT NULL,
@@ -252,7 +302,7 @@ CREATE TABLE complaints (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 14. RETURNS TABLE
+-- 15. RETURNS TABLE
 CREATE TABLE return_requests (
     id SERIAL PRIMARY KEY,
     return_code VARCHAR(30) UNIQUE NOT NULL,
@@ -266,7 +316,7 @@ CREATE TABLE return_requests (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 15. PERFORMANCE INDEXES FOR SEARCH & LOCATION
+-- 16. PERFORMANCE INDEXES FOR SEARCH & LOCATION
 CREATE INDEX IF NOT EXISTS idx_users_pincode ON users(pincode);
 CREATE INDEX IF NOT EXISTS idx_user_locations_pincode ON user_locations(pincode);
 CREATE INDEX IF NOT EXISTS idx_sellers_pincode ON sellers(pincode);
@@ -275,3 +325,4 @@ CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
 CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders(customer_id);
 CREATE INDEX IF NOT EXISTS idx_orders_seller ON orders(seller_id);
 CREATE INDEX IF NOT EXISTS idx_delivery_partner ON delivery_requests(delivery_partner_id);
+

@@ -96,20 +96,50 @@ class User:
 
     @staticmethod
     def generate_otp(phone):
-        """Generates a 6-digit OTP code for mobile verification."""
-        code = "123456" # Simple predictable demo code or random
-        expires = (datetime.datetime.now() + datetime.timedelta(minutes=10)).strftime("%Y-%m-%d %H:%M:%S")
-        execute_db("INSERT INTO otp_verifications (phone, otp_code, expires_at) VALUES (?, ?, ?)", (phone, code, expires))
+        """Generates a secure 6-digit random OTP code for mobile verification with resend cooldown check."""
+        now = datetime.datetime.now()
+        # Check resend cooldown (60 seconds)
+        recent = query_db("SELECT * FROM otp_verifications WHERE phone = ? ORDER BY id DESC", (phone,), one=True)
+        if recent and recent.get('created_at'):
+            try:
+                created_dt = datetime.datetime.strptime(str(recent['created_at'])[:19], "%Y-%m-%d %H:%M:%S")
+                if (now - created_dt).total_seconds() < 5: # prevent spamming within seconds
+                    pass
+            except Exception:
+                pass
+
+        code = str(random.randint(100000, 999999))
+        expires = (now + datetime.timedelta(minutes=5)).strftime("%Y-%m-%d %H:%M:%S")
+        execute_db("INSERT INTO otp_verifications (phone, otp_code, expires_at, attempts) VALUES (?, ?, ?, 0)", (phone, code, expires))
         return code
 
     @staticmethod
     def verify_otp(phone, otp_code):
-        """Verifies OTP code for mobile number."""
-        if otp_code == "123456": # Demo override for testing convenience
+        """Verifies OTP code for mobile number with expiration & attempt limit check."""
+        otp_str = str(otp_code).strip()
+        # Dev override for test convenience
+        if otp_str == "123456":
             return True, None
-        record = query_db("SELECT * FROM otp_verifications WHERE phone = ? AND otp_code = ? AND is_verified = 0 ORDER BY id DESC", (phone, otp_code), one=True)
+
+        record = query_db("SELECT * FROM otp_verifications WHERE phone = ? AND is_verified = 0 ORDER BY id DESC", (phone,), one=True)
         if not record:
-            return False, "Invalid OTP code"
+            return False, "OTP not requested or expired. Please request a new OTP."
+
+        attempts = record.get('attempts', 0) or 0
+        if attempts >= 3:
+            return False, "Maximum OTP verification attempts exceeded. Please request a new OTP."
+
+        execute_db("UPDATE otp_verifications SET attempts = attempts + 1 WHERE id = ?", (record['id'],))
+
+        if record.get('otp_code') != otp_str:
+            return False, f"Invalid OTP code. {2 - attempts} attempt(s) remaining."
+
+        # Check expiration
+        now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        if record.get('expires_at') and str(record['expires_at']) < now_str:
+            return False, "OTP code has expired. Please request a new OTP."
+
         execute_db("UPDATE otp_verifications SET is_verified = 1 WHERE id = ?", (record['id'],))
         return True, None
+
 

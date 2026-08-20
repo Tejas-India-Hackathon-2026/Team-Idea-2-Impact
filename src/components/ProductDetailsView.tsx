@@ -11,6 +11,7 @@ export const ProductDetailsView: React.FC = () => {
   } = useApp();
 
   const [quantity, setQuantity] = useState(1);
+  const [customText, setCustomText] = useState('');
 
   if (!selectedProduct) {
     return (
@@ -25,8 +26,16 @@ export const ProductDetailsView: React.FC = () => {
 
   const seller = sellers.find(s => s.id === selectedProduct.sellerId) || sellers[0];
 
+  const handleAddToCart = () => {
+    const prodWithCustom = {
+      ...selectedProduct,
+      customization: customText ? { customText } : undefined
+    };
+    addToCart(prodWithCustom, quantity);
+  };
+
   const handleBuyNow = () => {
-    addToCart(selectedProduct, quantity);
+    handleAddToCart();
     setActiveScreen('cart');
   };
 
@@ -49,9 +58,14 @@ export const ProductDetailsView: React.FC = () => {
         />
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <span className="badge badge-verified" style={{ alignSelf: 'flex-start' }}>
-            ✓ Verified Local Product
-          </span>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <span className="badge badge-verified">
+              ✓ Verified Local Product
+            </span>
+            <span className="badge" style={{ backgroundColor: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0' }}>
+              ⭐ Quality Score 4.9
+            </span>
+          </div>
 
           <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-dark)', margin: 0 }}>
             {selectedProduct.title}
@@ -72,7 +86,7 @@ export const ProductDetailsView: React.FC = () => {
           {/* Product Customization Section */}
           <div style={{
             backgroundColor: '#f8fafc',
-            border: '1px border-dashed #cbd5e1',
+            border: '1px dashed #cbd5e1',
             borderRadius: '10px',
             padding: '12px',
             marginTop: '8px'
@@ -82,6 +96,8 @@ export const ProductDetailsView: React.FC = () => {
             </label>
             <input
               type="text"
+              value={customText}
+              onChange={(e) => setCustomText(e.target.value)}
               placeholder="e.g. Engrave name 'Riya' or 'Gift Package with Red Ribbon'"
               className="form-input"
               style={{ fontSize: '12px', padding: '8px 10px' }}
@@ -105,7 +121,7 @@ export const ProductDetailsView: React.FC = () => {
           </div>
 
           <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-            <button onClick={() => addToCart(selectedProduct, quantity)} className="btn btn-secondary" style={{ flex: 1 }}>
+            <button onClick={handleAddToCart} className="btn btn-secondary" style={{ flex: 1 }}>
               Add to Cart
             </button>
             <button onClick={handleBuyNow} className="btn btn-primary" style={{ flex: 1 }}>

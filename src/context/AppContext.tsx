@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Role, Screen, ViewportMode, Product, Seller, Order, CartItem, DeliveryTask, FilterState, DeliveryMethod, PaymentMethod, UserProfile, LocationData } from '../types';
 
-const API_BASE = 'http://127.0.0.1:5000/api';
+const API_BASE = '/api';
 
 const defaultLocation: LocationData = {
   pincode: '560034',
@@ -309,14 +309,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const fetchProductsFromApi = async (lat?: number, lng?: number) => {
     setIsLoadingProducts(true);
     setProductError(null);
-    const targetLat = lat ?? locationData.latitude;
-    const targetLng = lng ?? locationData.longitude;
     try {
-      const res = await fetch(`${API_BASE}/products/nearby?lat=${targetLat}&lng=${targetLng}&radius_km=30`);
+      const res = await fetch(`${API_BASE}/products?pincode=${locationData.pincode}`);
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       const data = await res.json();
-      const nearbyList = data.nearbyProducts || [];
-      const mapped = nearbyList.map(mapBackendProduct);
+      const productList = Array.isArray(data) ? data : (data.products || []);
+      const mapped = productList.map(mapBackendProduct);
       setProducts(mapped);
       if (mapped.length > 0 && !selectedProduct) setSelectedProduct(mapped[0]);
     } catch (err) {
@@ -329,13 +327,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const fetchSellersFromApi = async (lat?: number, lng?: number) => {
     setIsLoadingSellers(true);
     setSellerError(null);
-    const targetLat = lat ?? locationData.latitude;
-    const targetLng = lng ?? locationData.longitude;
     try {
-      const res = await fetch(`${API_BASE}/sellers/nearby?lat=${targetLat}&lng=${targetLng}&radius_km=30`);
+      const res = await fetch(`${API_BASE}/sellers`);
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       const data = await res.json();
-      const mapped = data.map(mapBackendSeller);
+      const sellerList = Array.isArray(data) ? data : (data.sellers || []);
+      const mapped = sellerList.map(mapBackendSeller);
       setSellers(mapped);
       if (mapped.length > 0 && !selectedSeller) setSelectedSeller(mapped[0]);
     } catch (err) {
@@ -365,10 +362,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         showNotification(data.error || "Failed to send OTP.");
         return false;
       }
-      showNotification(`Demo OTP sent to ${phone}: ${data.demo_otp || '123456'}`);
+      showNotification(`OTP sent to ${phone}: ${data.demo_otp || '123456'}`);
       return true;
     } catch (err) {
-      showNotification("Demo OTP Code: 123456");
+      showNotification("OTP Code: 123456");
       return true;
     }
   };
@@ -554,25 +551,83 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const clearCart = () => setCart([]);
 
-  const toggleWishlist = (productId: string) => {
+  const toggleWishlist = async (productId: string) => {
     setWishlist(prev =>
       prev.includes(productId)
         ? prev.filter(id => id !== productId)
         : [...prev, productId]
     );
+    try {
+      await fetch(`${API_BASE}/wishlist/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_id: productId })
+      });
+    } catch (e) {}
   };
 
   const placeOrder = async (deliveryMethod: DeliveryMethod, paymentMethod: PaymentMethod, address: string): Promise<Order | null> => {
     if (cart.length === 0) return null;
     const subtotal = cart.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
+    const deliveryFee = deliveryMethod === 'pickup' ? 0 : 30;
+    const totalAmount = subtotal + deliveryFee;
+
+    try {
+      const res = await fetch(`${API_BASE}/orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer_id: user?.id || 5,
+          seller_id: cart[0].product.sellerId || 1,
+          total_amount: totalAmount,
+          delivery_fee: deliveryFee,
+          delivery_method: deliveryMethod === 'pickup' ? 'Store Pickup' : 'Local Delivery Partner',
+          payment_method: paymentMethod === 'cod' ? 'COD' : paymentMethod === 'upi' ? 'UPI' : 'Razorpay',
+          address: address || currentLocation,
+          pincode: locationData.pincode,
+          items: cart.map(item => ({
+            product_id: item.product.id,
+            quantity: item.quantity,
+            price: item.product.price,
+            customization: item.customization
+          }))
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const createdOrder: Order = {
+          id: `LK-100${data.order.id}`,
+          createdAt: data.order.created_at || new Date().toISOString(),
+          items: [...cart],
+          subtotal,
+          deliveryFee,
+          discount: 0,
+          total: totalAmount,
+          deliveryMethod,
+          paymentMethod,
+          status: 'placed',
+          deliveryAddress: address || currentLocation,
+          sellerId: String(data.order.seller_id),
+          sellerName: data.order.seller_name || cart[0].product.sellerName,
+          sellerPhone: '+91 98765 43210',
+          estimatedArrival: 'Today, within 45 mins'
+        };
+        setOrders(prev => [createdOrder, ...prev]);
+        clearCart();
+        showNotification(`Order #${createdOrder.id} placed successfully!`);
+        return createdOrder;
+      }
+    } catch (e) {}
+
     const newOrder: Order = {
       id: `LK${Math.floor(1000 + Math.random() * 9000)}`,
       createdAt: new Date().toISOString(),
       items: [...cart],
       subtotal,
-      deliveryFee: deliveryMethod === 'pickup' ? 0 : 30,
+      deliveryFee,
       discount: 0,
-      total: subtotal + (deliveryMethod === 'pickup' ? 0 : 30),
+      total: totalAmount,
       deliveryMethod,
       paymentMethod,
       status: 'placed',
@@ -588,8 +643,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newOrder;
   };
 
-  const updateOrderStatus = (orderId: string, status: Order['status']) => {
+  const updateOrderStatus = async (orderId: string, status: Order['status']) => {
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
+    const numericId = orderId.replace('LK-100', '').replace('LK', '');
+    if (/^\d+$/.test(numericId)) {
+      try {
+        const backendStatus = status === 'placed' ? 'Placed' : status === 'accepted' ? 'Accepted' : status === 'preparing' ? 'Preparing' : status === 'out_for_delivery' ? 'Out for Delivery' : 'Delivered';
+        await fetch(`${API_BASE}/orders/${numericId}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: backendStatus })
+        });
+      } catch (e) {}
+    }
   };
 
   const updateDeliveryTaskStatus = (taskId: string, status: DeliveryTask['status']) => {
@@ -597,6 +663,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addNewProduct = async (productData: Partial<Product>) => {
+    try {
+      const res = await fetch(`${API_BASE}/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: productData.title,
+          price: productData.price,
+          category: productData.category || 'Handmade',
+          description: productData.description || '',
+          quantity: productData.stock || 10,
+          image: productData.images?.[0] || ''
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const newP = mapBackendProduct(data.product);
+        setProducts(prev => [newP, ...prev]);
+        showNotification("Product listed successfully!");
+        return;
+      }
+    } catch (e) {}
+
     const newP = mapBackendProduct({
       id: Date.now(),
       name: productData.title,
