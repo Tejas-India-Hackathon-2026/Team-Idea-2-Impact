@@ -8,20 +8,9 @@ let authMobileNumber = '';
 let otpCountdownTimer = null;
 let currentDevOtp = '';
 
-let authEmailAddress = '';
-let isMandatoryAuth = false;
-
 // Auth Storage Helpers
 function getAuthToken() {
   return localStorage.getItem('lk_auth_token') || null;
-}
-
-function checkFirstTimeUserAuth() {
-  const token = getAuthToken();
-  if (!token) {
-    // Prompt mandatory first-time authentication modal
-    openAuthModal('customer', true);
-  }
 }
 
 function saveAuthSession(token, userObj) {
@@ -37,7 +26,14 @@ function getCurrentAuthUser() {
       return JSON.parse(userStr);
     } catch(e) {}
   }
-  return null;
+  return {
+    id: 'u_9876543210',
+    name: 'Riya Sharma',
+    phone: '9876543210',
+    email: 'riya.sharma@example.com',
+    roles: ['customer', 'seller'],
+    active_role: 'customer'
+  };
 }
 
 function updateAuthHeaderUI() {
@@ -45,7 +41,7 @@ function updateAuthHeaderUI() {
   const loginBtns = document.querySelectorAll('.auth-login-btn');
   loginBtns.forEach(btn => {
     if (user && user.phone) {
-      btn.innerHTML = `👤 ${user.name ? user.name.split(' ')[0] : 'User'} (${(user.active_role || 'customer').toUpperCase()})`;
+      btn.innerHTML = `👤 ${user.name.split(' ')[0]} (${(user.active_role || 'customer').toUpperCase()})`;
       btn.onclick = (e) => {
         e.preventDefault();
         openRoleSelectorModal();
@@ -64,65 +60,53 @@ function updateAuthHeaderUI() {
 // OTP AUTHENTICATION MODAL ENGINE
 // ----------------------------------------------------
 function openCustomerAuthModal() {
-  openAuthModal('customer', false);
+  openAuthModal('customer');
 }
 
 function openSellerAuthModal() {
-  openAuthModal('seller', false);
+  openAuthModal('seller');
 }
 
 function openDeliveryPartnerAuthModal() {
-  openAuthModal('delivery_partner', false);
+  openAuthModal('delivery_partner');
 }
 
-function openAuthModal(role = 'customer', isMandatory = false) {
+function openAuthModal(role = 'customer') {
   currentAuthRole = role;
-  isMandatoryAuth = isMandatory;
   
   let modal = document.getElementById('otp-auth-modal');
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'otp-auth-modal';
-    modal.style.cssText = 'position:fixed; inset:0; background:rgba(15,23,42,0.88); backdrop-filter:blur(6px); z-index:99999; display:flex; align-items:center; justify-content:center; padding:16px;';
+    modal.style.cssText = 'position:fixed; inset:0; background:rgba(15,23,42,0.85); backdrop-filter:blur(4px); z-index:99999; display:flex; align-items:center; justify-content:center; padding:16px;';
     document.body.appendChild(modal);
   }
 
-  const roleTitle = isMandatory ? '👋 Welcome to LocalKart! Please Log In' : (role === 'seller' ? 'Seller Login & Portal Access' : role === 'delivery_partner' ? 'Delivery Partner Login & Portal Access' : 'Login or Sign Up');
-
-  const closeBtnHtml = isMandatory ? '' : `<button onclick="closeAuthModal()" style="background:none; border:none; font-size:18px; color:var(--text-muted); cursor:pointer;">✕</button>`;
+  const roleTitle = role === 'seller' ? 'Seller Login & Portal Access' : role === 'delivery_partner' ? 'Delivery Partner Login & Portal Access' : 'Login or Sign Up';
 
   modal.innerHTML = `
-    <div class="card" style="max-width:440px; width:100%; padding:24px; box-shadow:0 20px 40px rgba(0,0,0,0.4); display:flex; flex-direction:column; gap:16px; background:var(--bg-white, #ffffff); border-radius:12px;">
+    <div class="card" style="max-width:420px; width:100%; padding:24px; box-shadow:0 20px 40px rgba(0,0,0,0.3); display:flex; flex-direction:column; gap:16px;">
       
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:10px;">
-        <strong style="font-size:16px; color:var(--text-dark, #0f172a);">${roleTitle}</strong>
-        ${closeBtnHtml}
+        <strong style="font-size:16px; color:var(--text-dark);">${roleTitle}</strong>
+        <button onclick="closeAuthModal()" style="background:none; border:none; font-size:18px; color:var(--text-muted); cursor:pointer;">✕</button>
       </div>
 
-      <!-- STEP 1: MOBILE NUMBER & EMAIL INPUT -->
+      <!-- STEP 1: MOBILE NUMBER INPUT -->
       <div id="auth-step-phone" style="display:flex; flex-direction:column; gap:12px;">
-        <p style="font-size:12px; color:var(--text-muted, #64748b); margin:0;">
-          Please enter your mobile number and email address to receive a 6-digit OTP code.
-        </p>
+        <p style="font-size:12px; color:var(--text-muted); margin:0;">Enter your 10-digit Indian mobile number to receive a 6-digit OTP code.</p>
         
         <div class="form-group" style="margin:0;">
-          <label class="form-label" style="font-size:12px; font-weight:700;">Mobile Number *</label>
-          <div style="display:flex; align-items:center; border:1px solid var(--border-color, #cbd5e1); border-radius:6px; overflow:hidden; background:var(--bg-white);">
-            <span style="background:var(--bg-light, #f8fafc); padding:10px 12px; font-size:13px; font-weight:800; border-right:1px solid var(--border-color, #cbd5e1); color:var(--text-dark, #0f172a);">+91</span>
-            <input type="tel" id="auth-phone-input" maxLength="10" placeholder="e.g. 9876543210" class="form-input" style="border:none; font-size:14px; font-weight:700; flex:1; padding:10px;">
+          <label class="form-label">Mobile Number</label>
+          <div style="display:flex; align-items:center; border:1px solid var(--border-color); border-radius:6px; overflow:hidden; background:var(--bg-white);">
+            <span style="background:var(--bg-light); padding:10px 12px; font-size:13px; font-weight:800; border-right:1px solid var(--border-color); color:var(--text-dark);">+91</span>
+            <input type="tel" id="auth-phone-input" maxLength="10" placeholder="e.g. 9876543210" class="form-input" style="border:none; font-size:14px; font-weight:700; flex:1;">
           </div>
         </div>
 
-        <div class="form-group" style="margin:0;">
-          <label class="form-label" style="font-size:12px; font-weight:700;">Email Address *</label>
-          <input type="email" id="auth-email-input" placeholder="e.g. user@example.com" class="form-input" style="font-size:14px; font-weight:600; padding:10px; border:1px solid var(--border-color, #cbd5e1); border-radius:6px; width:100%;">
-        </div>
-
-        <button onclick="handleSendOTP()" class="btn btn-primary btn-block" style="padding:12px; font-size:14px; font-weight:700; background:#16a34a; color:#fff; border:none; border-radius:6px; cursor:pointer;">
-          Send 6-Digit OTP →
-        </button>
+        <button onclick="handleSendOTP()" class="btn btn-primary btn-block" style="padding:12px; font-size:14px;">Continue →</button>
         
-        <div style="font-size:11px; text-align:center; color:var(--text-muted, #64748b);">
+        <div style="font-size:11px; text-align:center; color:var(--text-muted);">
           By continuing, you agree to LocalKart's Terms of Service & Privacy Policy.
         </div>
       </div>
@@ -266,7 +250,6 @@ function handleOTPPaste(e) {
 // ----------------------------------------------------
 async function handleSendOTP() {
   const phoneInput = document.getElementById('auth-phone-input')?.value.trim();
-  const emailInput = document.getElementById('auth-email-input')?.value.trim();
   const cleanPhone = phoneInput ? phoneInput.replace(/\D/g, '') : '';
 
   if (!cleanPhone || cleanPhone.length !== 10) {
@@ -274,18 +257,12 @@ async function handleSendOTP() {
     return;
   }
 
-  if (!emailInput || !emailInput.includes('@') || !emailInput.includes('.')) {
-    showToast('Please enter a valid email address.');
-    return;
-  }
-
   authMobileNumber = cleanPhone;
-  authEmailAddress = emailInput;
 
   showToast('Sending OTP...');
   let res = await apiFetch('/auth/send-otp', {
     method: 'POST',
-    body: JSON.stringify({ phone: cleanPhone, email: emailInput, role: currentAuthRole })
+    body: JSON.stringify({ phone: cleanPhone, role: currentAuthRole })
   });
 
   if (!res) {
@@ -295,10 +272,7 @@ async function handleSendOTP() {
   if (res.status === 'success') {
     document.getElementById('auth-step-phone').style.display = 'none';
     document.getElementById('auth-step-otp').style.display = 'flex';
-    const sentLabel = document.getElementById('otp-sent-phone-label');
-    if (sentLabel) {
-      sentLabel.innerText = `Sent to +91 ${cleanPhone.substring(0, 2)}XXXXXX${cleanPhone.substring(8)} (${emailInput})`;
-    }
+    document.getElementById('otp-sent-phone-label').innerText = `Sent to +91 ${cleanPhone.substring(0, 2)}XXXXXX${cleanPhone.substring(8)}`;
 
     if (res.dev_otp) {
       currentDevOtp = res.dev_otp;
@@ -363,20 +337,18 @@ async function handleVerifyOTP() {
   showToast('Verifying OTP...');
   let res = await apiFetch('/auth/verify-otp', {
     method: 'POST',
-    body: JSON.stringify({ phone: authMobileNumber, email: authEmailAddress, otp: enteredOtp, role: currentAuthRole })
+    body: JSON.stringify({ phone: authMobileNumber, otp: enteredOtp, role: currentAuthRole })
   });
 
   if (!res) {
-    const defaultName = authEmailAddress ? authEmailAddress.split('@')[0] : 'User';
     res = {
       status: 'success',
       user_exists: true,
       token: `lk_session_${authMobileNumber}`,
       user: {
         id: `u_${authMobileNumber}`,
-        name: authMobileNumber === '9876543210' ? 'Riya Sharma' : (defaultName.charAt(0).toUpperCase() + defaultName.slice(1)),
+        name: authMobileNumber === '9876543210' ? 'Riya Sharma' : 'Local User',
         phone: authMobileNumber,
-        email: authEmailAddress,
         phone_verified: true,
         roles: ['customer', currentAuthRole],
         active_role: currentAuthRole
@@ -388,7 +360,7 @@ async function handleVerifyOTP() {
     if (res.user_exists && res.user) {
       saveAuthSession(res.token, res.user);
       closeAuthModal();
-      showToast(`Welcome, ${res.user.name || 'User'}!`);
+      showToast(`Welcome back, ${res.user.name}!`);
 
       if (currentAuthRole === 'seller') {
         window.location.href = 'seller-dashboard.html';
@@ -527,7 +499,4 @@ function handleLogout() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  updateAuthHeaderUI();
-  checkFirstTimeUserAuth();
-});
+document.addEventListener('DOMContentLoaded', updateAuthHeaderUI);
