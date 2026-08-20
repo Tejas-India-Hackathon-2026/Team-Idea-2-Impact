@@ -100,7 +100,16 @@ export const HomeView: React.FC = () => {
 
         {!isLoadingProducts && !productError && products.length === 0 && (
           <div className="card" style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
-            No products found nearby.
+            <div style={{ fontSize: '24px', marginBottom: '8px' }}>📍</div>
+            <strong style={{ fontSize: '15px', color: 'var(--text-dark)', display: 'block', marginBottom: '4px' }}>
+              No nearby products found in this area
+            </strong>
+            <p style={{ fontSize: '12px', margin: '0 0 16px 0' }}>
+              We couldn't find local sellers within 30km of your current location. Try changing your PIN code or explore products available for nationwide shipping.
+            </p>
+            <button onClick={() => setActiveScreen('location')} className="btn btn-primary btn-sm">
+              Change PIN Code
+            </button>
           </div>
         )}
 

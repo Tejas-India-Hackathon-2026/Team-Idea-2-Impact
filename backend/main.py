@@ -637,6 +637,46 @@ def geocode_location(pincode: Optional[str] = None, lat: Optional[float] = None,
     
     raise HTTPException(status_code=400, detail="Please provide either a 6-digit 'pincode' or 'lat' and 'lng' parameters.")
 
+class PincodeRequestSchema(BaseModel):
+    pincode: str
+
+@app.post("/api/location/pincode")
+def detect_location_pincode(payload: PincodeRequestSchema):
+    return geocode_location(pincode=payload.pincode)
+
+@app.get("/api/products/nearby")
+def get_nearby_products(
+    lat: float = Query(12.934532, description="Customer Latitude"),
+    lng: float = Query(77.624389, description="Customer Longitude"),
+    radius_km: float = Query(30.0, description="Max Radius KM")
+):
+    sample_products = [
+        {"id": "p1", "title": "Handmade Terracotta Vase", "price": 450.0, "category": "Handmade", "sellerName": "Riya Handicrafts", "lat": 12.934532, "lng": 77.624389, "image": "https://images.unsplash.com/photo-1612196808214-b7e239e5f6b7?w=800&auto=format&fit=crop&q=80"},
+        {"id": "p2", "title": "Handcrafted Bamboo Basket", "price": 299.0, "category": "Handmade", "sellerName": "Riya Handicrafts", "lat": 12.978369, "lng": 77.640835, "image": "https://images.unsplash.com/photo-1590794056226-79ef3a8147e1?w=800&auto=format&fit=crop&q=80"},
+        {"id": "p3", "title": "Homemade Mango Pickle (500g)", "price": 180.0, "category": "Food", "sellerName": "Maa Shakti Foods", "lat": 12.978369, "lng": 77.640835, "image": "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=800&auto=format&fit=crop&q=80"},
+        {"id": "p4", "title": "Pure Raw Wildflower Honey", "price": 350.0, "category": "Farm Products", "sellerName": "Green Valley Farm", "lat": 12.911623, "lng": 77.638862, "image": "https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=800&auto=format&fit=crop&q=80"}
+    ]
+
+    nearby_items = []
+    other_items = []
+
+    for p in sample_products:
+        dist = calculate_haversine_distance(lat, lng, p["lat"], p["lng"])
+        p_copy = dict(p)
+        p_copy["distanceKm"] = dist
+        if dist <= radius_km:
+            nearby_items.append(p_copy)
+        else:
+            other_items.append(p_copy)
+
+    nearby_items.sort(key=lambda x: x["distanceKm"])
+
+    return {
+        "count_nearby": len(nearby_items),
+        "nearbyProducts": nearby_items,
+        "otherProducts": other_items if len(nearby_items) == 0 else []
+    }
+
 # ----------------------------------------------------
 # APIS: NEARBY SELLERS & DISTANCE CALCULATION
 # ----------------------------------------------------

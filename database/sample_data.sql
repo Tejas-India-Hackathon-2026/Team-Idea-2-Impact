@@ -21,6 +21,9 @@ INSERT INTO user_roles (user_id, role, approved) VALUES
 (6, 'customer', 1),
 (7, 'admin', 1);
 
+INSERT INTO user_locations (user_id, pincode, locality, city, district, state, country, latitude, longitude, formatted_address, is_default) VALUES
+(5, '560034', 'Koramangala 4th Block', 'Bengaluru', 'Bengaluru Urban', 'Karnataka', 'India', 12.935200, 77.624500, 'Koramangala 4th Block, Bengaluru, Karnataka, India', 1);
+
 INSERT INTO sellers (user_id, business_name, description, location, pincode, self_delivery, delivery_radius, rating, verified) VALUES
 (1, 'Riya Handicrafts', 'Handcrafted terracotta pottery, bamboo art, painted clay items, and eco-friendly home decor sculpted using natural riverbed clay.', 'Koramangala 4th Block, Bengaluru', '560034', TRUE, 5, 4.8, TRUE),
 (2, 'Maa Shakti Foods', 'Authentic traditional homemade pickles, mango achaar, roasted snacks, and papad crafted in small hygienic home batches.', 'Indiranagar 100ft Rd, Bengaluru', '560038', TRUE, 4, 4.7, TRUE),

@@ -105,36 +105,49 @@ export const Navigation: React.FC = () => {
         </div>
       </header>
 
-      {/* MOBILE HEADER (Logo, Location, Cart Header) */}
-      <header className="md:hidden sticky top-0 z-40 bg-slate-900 border-b border-slate-800 text-white px-4 py-3 flex items-center justify-between font-sans">
-        <div onClick={() => setActiveScreen('home')} className="flex items-center gap-2 cursor-pointer">
-          <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-extrabold text-sm">
-            L
+      {/* MOBILE HEADER (Logo, Location Badge, Cart Header) */}
+      <header className="md:hidden sticky top-0 z-40 bg-slate-900 border-b border-slate-800 text-white px-3 py-2.5 flex flex-col gap-2 font-sans">
+        <div className="flex items-center justify-between">
+          <div onClick={() => setActiveScreen('home')} className="flex items-center gap-2 cursor-pointer">
+            <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-extrabold text-sm">
+              L
+            </div>
+            <span className="font-extrabold text-lg text-white">Local<span className="text-emerald-400">Kart</span></span>
           </div>
-          <span className="font-extrabold text-lg text-white">Local<span className="text-emerald-400">Kart</span></span>
-        </div>
 
-        <div className="flex items-center gap-2">
-          {user && user.roles.length > 1 && (
-            <button
-              onClick={() => setShowAccountSwitcher(true)}
-              className="p-1.5 rounded-lg bg-slate-800 text-emerald-400 text-xs border border-slate-700"
-            >
-              <UserCheck className="w-4 h-4" />
-            </button>
-          )}
-
-          <button
-            onClick={() => setActiveScreen('cart')}
-            className="relative p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+          {/* Location Badge on Mobile Header */}
+          <div
+            onClick={() => setActiveScreen('location')}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-800 text-xs text-slate-200 border border-slate-700 cursor-pointer active:scale-95 transition-transform"
           >
-            <ShoppingBag className="w-5 h-5" />
-            {totalCartItems > 0 && (
-              <span className="absolute -top-1 -right-1 bg-emerald-500 text-slate-950 font-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
-                {totalCartItems}
-              </span>
+            <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span className="truncate max-w-[140px] font-bold">
+              {currentLocation || '📍 Select Location'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {user && user.roles.length > 1 && (
+              <button
+                onClick={() => setShowAccountSwitcher(true)}
+                className="p-1.5 rounded-lg bg-slate-800 text-emerald-400 text-xs border border-slate-700"
+              >
+                <UserCheck className="w-4 h-4" />
+              </button>
             )}
-          </button>
+
+            <button
+              onClick={() => setActiveScreen('cart')}
+              className="relative p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+            >
+              <ShoppingBag className="w-5 h-5" />
+              {totalCartItems > 0 && (
+                <span className="absolute -top-1 -right-1 bg-emerald-500 text-slate-950 font-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+                  {totalCartItems}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       </header>
 

@@ -64,10 +64,19 @@ class User:
 
     @staticmethod
     def find_by_id(user_id):
-        """Finds user by user ID with attached roles."""
-        user = query_db("SELECT id, name, email, phone, role, pincode, city, created_at FROM users WHERE id = ?", (user_id,), one=True)
+        """Finds user by user ID with attached roles and saved location."""
+        user = query_db("SELECT id, name, email, phone, role, pincode, city, state, latitude, longitude, created_at FROM users WHERE id = ?", (user_id,), one=True)
         if user:
             user['roles'] = User.get_roles(user_id)
+            loc = query_db("SELECT * FROM user_locations WHERE user_id = ? AND is_default = 1 ORDER BY id DESC", (user_id,), one=True)
+            user['location'] = loc or {
+                'pincode': user.get('pincode', '560034'),
+                'city': user.get('city', 'Bengaluru'),
+                'state': user.get('state', 'Karnataka'),
+                'latitude': float(user.get('latitude') or 12.9352),
+                'longitude': float(user.get('longitude') or 77.6245),
+                'locality': 'Koramangala 4th Block'
+            }
         return user
 
     @staticmethod

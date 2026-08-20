@@ -2,6 +2,7 @@
 from functools import wraps
 from flask import Blueprint, request, jsonify, session
 from backend.models.user import User
+from backend.models.user_location import UserLocation
 from backend.models.seller_profile import SellerProfile
 from backend.models.delivery_profile import DeliveryProfile
 from backend.database import execute_db, query_db
@@ -89,7 +90,73 @@ def switch_role():
     user = User.find_by_id(user_id)
     return jsonify({'message': f'Switched to {target_role}', 'user': user}), 200
 
-# 4. REGISTER SELLER
+# 4. LOCATION PERSISTENCE API ENDPOINTS (SECTION 15)
+@auth_bp.route('/api/location/save', methods=['POST'])
+@auth_bp.route('/api/location', methods=['POST', 'PUT'])
+def save_user_location():
+    data = request.get_json() or {}
+    user_id = session.get('user_id')
+
+    pincode = str(data.get('pincode', '560034')).strip()
+    locality = data.get('locality', 'Koramangala')
+    city = data.get('city', 'Bengaluru')
+    district = data.get('district', 'Bengaluru Urban')
+    state = data.get('state', 'Karnataka')
+    country = data.get('country', 'India')
+    lat = float(data.get('latitude', 12.9352))
+    lng = float(data.get('longitude', 77.6245))
+    formatted_address = data.get('formatted_address') or f"{locality}, {city}, {state}, India"
+
+    session['localkart_pincode'] = pincode
+    session['localkart_city'] = city
+    session['localkart_locality'] = locality
+
+    location_record = UserLocation.save(
+        user_id=user_id,
+        pincode=pincode,
+        locality=locality,
+        city=city,
+        district=district,
+        state=state,
+        country=country,
+        lat=lat,
+        lng=lng,
+        formatted_address=formatted_address
+    )
+
+    return jsonify({
+        'message': 'Location saved successfully',
+        'location': location_record
+    }), 200
+
+@auth_bp.route('/api/location', methods=['GET'])
+def get_saved_location():
+    user_id = session.get('user_id')
+    if user_id:
+        loc = UserLocation.get_by_user_id(user_id)
+        if loc:
+            return jsonify({'saved': True, 'location': loc}), 200
+
+    # Return session / default fallback
+    pincode = session.get('localkart_pincode', '560034')
+    city = session.get('localkart_city', 'Bengaluru')
+    locality = session.get('localkart_locality', 'Koramangala 4th Block')
+    return jsonify({
+        'saved': False,
+        'location': {
+            'pincode': pincode,
+            'locality': locality,
+            'city': city,
+            'district': 'Bengaluru Urban',
+            'state': 'Karnataka',
+            'country': 'India',
+            'latitude': 12.9352,
+            'longitude': 77.6245,
+            'formatted_address': f"{locality}, {city}, Karnataka, India"
+        }
+    }), 200
+
+# 5. REGISTER SELLER
 @auth_bp.route('/api/auth/register-seller', methods=['POST'])
 def register_seller():
     data = request.get_json() or {}
@@ -110,7 +177,6 @@ def register_seller():
         user = User.find_by_id(user_id)
         return jsonify({'message': 'Seller registered successfully', 'seller': seller, 'user': user}), 201
     else:
-        # Create seller account with phone
         phone = data.get('phone')
         if not phone:
             return jsonify({'error': 'Mobile number required'}), 400
@@ -122,7 +188,7 @@ def register_seller():
         session['seller_id'] = seller['id']
         return jsonify({'message': 'Seller registered successfully', 'seller': seller, 'user': user}), 201
 
-# 5. REGISTER DELIVERY PARTNER
+# 6. REGISTER DELIVERY PARTNER
 @auth_bp.route('/api/auth/register-delivery', methods=['POST'])
 def register_delivery():
     data = request.get_json() or {}

@@ -54,7 +54,25 @@ CREATE TABLE customer_profiles (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 1D. OTP VERIFICATIONS TABLE
+-- 1D. USER LOCATIONS TABLE (Structured Customer Location Persistence)
+CREATE TABLE user_locations (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    pincode VARCHAR(10) NOT NULL,
+    locality VARCHAR(100),
+    city VARCHAR(100) NOT NULL,
+    district VARCHAR(100),
+    state VARCHAR(100) NOT NULL,
+    country VARCHAR(50) DEFAULT 'India',
+    latitude DECIMAL(9, 6),
+    longitude DECIMAL(9, 6),
+    formatted_address TEXT,
+    is_default BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 1E. OTP VERIFICATIONS TABLE
 CREATE TABLE otp_verifications (
     id SERIAL PRIMARY KEY,
     phone VARCHAR(20) NOT NULL,

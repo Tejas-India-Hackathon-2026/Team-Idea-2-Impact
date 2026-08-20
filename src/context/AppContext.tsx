@@ -1,7 +1,19 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Role, Screen, ViewportMode, Product, Seller, Order, CartItem, DeliveryTask, FilterState, DeliveryMethod, PaymentMethod, UserProfile } from '../types';
+import { Role, Screen, ViewportMode, Product, Seller, Order, CartItem, DeliveryTask, FilterState, DeliveryMethod, PaymentMethod, UserProfile, LocationData } from '../types';
 
 const API_BASE = 'http://127.0.0.1:5000/api';
+
+const defaultLocation: LocationData = {
+  pincode: '560034',
+  locality: 'Koramangala 4th Block',
+  city: 'Bengaluru',
+  district: 'Bengaluru Urban',
+  state: 'Karnataka',
+  country: 'India',
+  latitude: 12.9352,
+  longitude: 77.6245,
+  formattedAddress: 'Koramangala 4th Block, Bengaluru, Karnataka, India'
+};
 
 interface AppContextType {
   activeRole: Role;
@@ -10,8 +22,14 @@ interface AppContextType {
   setActiveScreen: (screen: Screen) => void;
   viewportMode: ViewportMode;
   setViewportMode: (mode: ViewportMode) => void;
+  
+  // Location System
   currentLocation: string;
   setCurrentLocation: (loc: string) => void;
+  locationData: LocationData;
+  detectLocationByPin: (pin: string) => Promise<LocationData>;
+  detectLocationByGps: () => Promise<LocationData>;
+  confirmAndSaveLocation: (loc: LocationData) => Promise<void>;
   
   // Auth State
   isAuthenticated: boolean;
@@ -55,8 +73,8 @@ interface AppContextType {
   logout: () => void;
 
   // API Actions
-  fetchProductsFromApi: () => Promise<void>;
-  fetchSellersFromApi: () => Promise<void>;
+  fetchProductsFromApi: (lat?: number, lng?: number) => Promise<void>;
+  fetchSellersFromApi: (lat?: number, lng?: number) => Promise<void>;
   addToCart: (product: Product, quantity?: number) => void;
   removeFromCart: (productId: string) => void;
   updateCartQuantity: (productId: string, delta: number) => void;
@@ -86,9 +104,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Session Restore from localStorage
   const initialToken = localStorage.getItem('localkart_token');
   const initialUserStr = localStorage.getItem('localkart_user');
+  const initialLocStr = localStorage.getItem('localkart_location');
+  
   let parsedUser: UserProfile | null = null;
   if (initialUserStr) {
     try { parsedUser = JSON.parse(initialUserStr); } catch (e) {}
+  }
+
+  let initialLocationData: LocationData = defaultLocation;
+  if (initialLocStr) {
+    try { initialLocationData = JSON.parse(initialLocStr); } catch (e) {}
+  } else if (parsedUser?.location) {
+    initialLocationData = parsedUser.location;
   }
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!initialToken);
@@ -100,7 +127,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeRole, setActiveRoleState] = useState<Role>(parsedUser?.activeRole || 'customer');
   const [activeScreen, setActiveScreenState] = useState<Screen>(!!initialToken ? 'home' : 'auth_welcome');
   const [viewportMode, setViewportMode] = useState<ViewportMode>('desktop');
-  const [currentLocation, setCurrentLocation] = useState<string>('Koramangala 4th Block, Bengaluru');
+
+  // Location State
+  const [locationData, setLocationData] = useState<LocationData>(initialLocationData);
+  const [currentLocation, setCurrentLocation] = useState<string>(
+    `${initialLocationData.locality || initialLocationData.city}, ${initialLocationData.state}`
+  );
 
   const [products, setProducts] = useState<Product[]>([]);
   const [sellers, setSellers] = useState<Seller[]>([]);
@@ -127,24 +159,128 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setTimeout(() => setNotification(null), 3500);
   };
 
+  // ----------------------------------------------------
+  // LOCATION SERVICES (PINCODE & GPS GEOCODING)
+  // ----------------------------------------------------
+  const detectLocationByPin = async (pin: string): Promise<LocationData> => {
+    const cleanPin = pin.trim();
+    if (!/^\d{6}$/.test(cleanPin)) {
+      throw new Error("Please enter a valid 6-digit PIN code.");
+    }
+    try {
+      const res = await fetch(`${API_BASE}/location/geocode?pincode=${cleanPin}`);
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.detail || "We couldn't find this PIN code. Please check and try again.");
+      }
+      const data = await res.json();
+      return {
+        pincode: cleanPin,
+        locality: data.area || data.city,
+        city: data.city,
+        district: data.district || data.city,
+        state: data.state,
+        country: data.country || 'India',
+        latitude: Number(data.latitude || 12.9352),
+        longitude: Number(data.longitude || 77.6245),
+        formattedAddress: data.formattedAddress || `${data.area}, ${data.city}, ${data.state}`
+      };
+    } catch (err: any) {
+      throw new Error(err.message || "Unable to detect location right now. Please try again.");
+    }
+  };
+
+  const detectLocationByGps = async (): Promise<LocationData> => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        return reject(new Error("Current location is unavailable in your browser. Please enter your PIN code."));
+      }
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          try {
+            const res = await fetch(`${API_BASE}/location/geocode?lat=${lat}&lng=${lng}`);
+            if (!res.ok) throw new Error("Reverse geocoding failed.");
+            const data = await res.json();
+            resolve({
+              pincode: data.pincode || '560034',
+              locality: data.area || data.city,
+              city: data.city,
+              district: data.district || data.city,
+              state: data.state,
+              country: 'India',
+              latitude: lat,
+              longitude: lng,
+              formattedAddress: data.formattedAddress || `📍 ${data.area}, ${data.city}`
+            });
+          } catch (e) {
+            resolve({
+              pincode: '560034',
+              locality: 'Detected GPS Location',
+              city: 'Current Area',
+              district: 'Local District',
+              state: 'India',
+              country: 'India',
+              latitude: lat,
+              longitude: lng,
+              formattedAddress: `GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`
+            });
+          }
+        },
+        (error) => {
+          if (error.code === error.PERMISSION_DENIED) {
+            reject(new Error("Location permission was denied."));
+          } else {
+            reject(new Error("Current location is unavailable. Please enter your PIN code."));
+          }
+        },
+        { timeout: 10000, enableHighAccuracy: true }
+      );
+    });
+  };
+
+  const confirmAndSaveLocation = async (loc: LocationData) => {
+    setLocationData(loc);
+    const displayStr = `${loc.locality || loc.city}, ${loc.state}`;
+    setCurrentLocation(displayStr);
+    localStorage.setItem('localkart_location', JSON.stringify(loc));
+
+    // Save to backend database if user is logged in
+    if (isAuthenticated && user) {
+      try {
+        await fetch(`${API_BASE}/location/save`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(loc)
+        });
+      } catch (err) {}
+    }
+
+    showNotification(`Location set to ${displayStr}`);
+    // Re-fetch nearby sellers and products based on new coordinates
+    fetchSellersFromApi(loc.latitude, loc.longitude);
+    fetchProductsFromApi(loc.latitude, loc.longitude);
+  };
+
   // Helper to map backend product
   const mapBackendProduct = (p: any): Product => ({
     id: String(p.id),
-    title: p.name || 'Local Product',
+    title: p.name || p.title || 'Local Product',
     price: Number(p.price || 0),
     originalPrice: Number(p.price || 0) + 50,
     rating: Number(p.rating || 4.5),
     reviewsCount: 12,
-    distanceKm: Number(p.distance_km || 2.4),
+    distanceKm: Number(p.distanceKm || p.distance_km || 2.4),
     locality: p.locality || 'Koramangala',
     category: p.category || 'Handmade',
     images: [p.image || 'https://images.unsplash.com/photo-1612196808214-b7e239e5f6b7?w=800&auto=format&fit=crop&q=80'],
     description: p.description || 'Artisan item from local seller.',
     sellerId: String(p.seller_id || 1),
-    sellerName: p.seller_name || 'Riya Handicrafts',
+    sellerName: p.sellerName || p.seller_name || 'Riya Handicrafts',
     sellerAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-    sellerVerified: Boolean(p.seller_verified ?? true),
-    stock: p.quantity || 10,
+    sellerVerified: Boolean(p.sellerVerified ?? p.seller_verified ?? true),
+    stock: p.quantity || p.stock || 10,
     deliveryEstimate: 'Today',
     pickupAvailable: Boolean(p.pickup_available ?? true),
     deliveryAvailable: Boolean(p.delivery_available ?? true),
@@ -154,15 +290,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const mapBackendSeller = (s: any): Seller => ({
     id: String(s.id),
     name: s.business_name || s.name || 'Local Maker',
-    storeName: s.business_name || 'Local Store',
+    storeName: s.business_name || s.name || 'Local Store',
     avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     coverImage: 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=800&auto=format&fit=crop&q=80',
     rating: Number(s.rating || 4.8),
     reviewsCount: 24,
-    distanceKm: 2.1,
-    locality: s.location || 'Koramangala',
+    distanceKm: Number(s.distanceKm || s.distance_km || 2.1),
+    locality: s.locality || s.location || 'Koramangala',
     verified: Boolean(s.verified ?? true),
-    category: 'Handmade',
+    category: s.category || 'Handmade',
     bio: s.description || 'Local seller committed to neighborhood quality.',
     joinedDate: '2026',
     productsCount: 6,
@@ -170,14 +306,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     followersCount: 150
   });
 
-  const fetchProductsFromApi = async () => {
+  const fetchProductsFromApi = async (lat?: number, lng?: number) => {
     setIsLoadingProducts(true);
     setProductError(null);
+    const targetLat = lat ?? locationData.latitude;
+    const targetLng = lng ?? locationData.longitude;
     try {
-      const res = await fetch(`${API_BASE}/products`);
+      const res = await fetch(`${API_BASE}/products/nearby?lat=${targetLat}&lng=${targetLng}&radius_km=30`);
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       const data = await res.json();
-      const mapped = data.map(mapBackendProduct);
+      const nearbyList = data.nearbyProducts || [];
+      const mapped = nearbyList.map(mapBackendProduct);
       setProducts(mapped);
       if (mapped.length > 0 && !selectedProduct) setSelectedProduct(mapped[0]);
     } catch (err) {
@@ -187,11 +326,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const fetchSellersFromApi = async () => {
+  const fetchSellersFromApi = async (lat?: number, lng?: number) => {
     setIsLoadingSellers(true);
     setSellerError(null);
+    const targetLat = lat ?? locationData.latitude;
+    const targetLng = lng ?? locationData.longitude;
     try {
-      const res = await fetch(`${API_BASE}/sellers`);
+      const res = await fetch(`${API_BASE}/sellers/nearby?lat=${targetLat}&lng=${targetLng}&radius_km=30`);
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       const data = await res.json();
       const mapped = data.map(mapBackendSeller);
@@ -205,8 +346,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   useEffect(() => {
-    fetchProductsFromApi();
-    fetchSellersFromApi();
+    fetchProductsFromApi(locationData.latitude, locationData.longitude);
+    fetchSellersFromApi(locationData.latitude, locationData.longitude);
   }, []);
 
   // OTP & AUTH FLOWS
@@ -220,139 +361,164 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         body: JSON.stringify({ phone, role })
       });
       const data = await res.json();
-      showNotification(`OTP 123456 sent to ${phone}`);
-      setActiveScreenState('verify_otp');
+      if (!res.ok) {
+        showNotification(data.error || "Failed to send OTP.");
+        return false;
+      }
+      showNotification(`Demo OTP sent to ${phone}: ${data.demo_otp || '123456'}`);
       return true;
     } catch (err) {
-      showNotification(`OTP 123456 ready for ${phone}`);
-      setActiveScreenState('verify_otp');
+      showNotification("Demo OTP Code: 123456");
       return true;
     }
   };
 
-  const verifyOtp = async (code: string): Promise<boolean> => {
+  const verifyOtp = async (otpCode: string): Promise<boolean> => {
     if (!phonePendingOtp) return false;
     try {
       const res = await fetch(`${API_BASE}/auth/otp/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phonePendingOtp, otp_code: code, role: requestedRole })
+        body: JSON.stringify({ phone: phonePendingOtp, otp_code: otpCode, role: requestedRole })
       });
       const data = await res.json();
-      
-      const roles: Role[] = data.user?.roles || [requestedRole];
-      const activeR: Role = requestedRole;
-
-      const newUser: UserProfile = {
-        id: String(data.user?.id || 'u_' + phonePendingOtp.slice(-4)),
-        name: data.user?.name || `User ${phonePendingOtp.slice(-4)}`,
-        phone: phonePendingOtp,
-        email: data.user?.email || '',
-        roles: roles,
-        activeRole: activeR,
-        pincode: '560034',
-        city: 'Bengaluru'
-      };
-
-      setUser(newUser);
-      setIsAuthenticated(true);
-      localStorage.setItem('localkart_token', `token_${phonePendingOtp}`);
-      localStorage.setItem('localkart_user', JSON.stringify(newUser));
-
-      showNotification(`Mobile verified! Welcome to LocalKart`);
-
-      if (roles.length > 1) {
-        setShowAccountSwitcher(true);
+      if (!res.ok) {
+        showNotification(data.error || "Invalid OTP code.");
+        return false;
       }
 
-      switchUserRole(activeR);
+      const verifiedUser: UserProfile = {
+        id: String(data.user.id),
+        name: data.user.name,
+        phone: data.user.phone,
+        email: data.user.email,
+        roles: data.user.roles || [requestedRole],
+        activeRole: requestedRole,
+        pincode: data.user.pincode || locationData.pincode,
+        city: data.user.city || locationData.city,
+        location: locationData
+      };
+
+      setIsAuthenticated(true);
+      setUser(verifiedUser);
+      setActiveRoleState(requestedRole);
+      localStorage.setItem('localkart_token', 'demo_jwt_token_123456');
+      localStorage.setItem('localkart_user', JSON.stringify(verifiedUser));
+
+      showNotification(`Welcome to LocalKart, ${verifiedUser.name}!`);
+
+      if (requestedRole === 'seller') {
+        setActiveScreenState('seller_dashboard');
+      } else if (requestedRole === 'delivery') {
+        setActiveScreenState('delivery_dashboard');
+      } else {
+        setActiveScreenState('home');
+      }
+
       return true;
     } catch (err) {
-      // Fallback local verification
-      const newUser: UserProfile = {
-        id: 'u_demo',
-        name: `Local User (${phonePendingOtp.slice(-4)})`,
+      const mockUser: UserProfile = {
+        id: 'u1',
+        name: 'Demo User',
         phone: phonePendingOtp,
         roles: [requestedRole],
         activeRole: requestedRole,
-        pincode: '560034',
-        city: 'Bengaluru'
+        pincode: locationData.pincode,
+        city: locationData.city,
+        location: locationData
       };
-
-      setUser(newUser);
       setIsAuthenticated(true);
-      localStorage.setItem('localkart_token', 'token_demo');
-      localStorage.setItem('localkart_user', JSON.stringify(newUser));
-      showNotification(`Mobile verified! Welcome to LocalKart`);
-      switchUserRole(requestedRole);
+      setUser(mockUser);
+      setActiveRoleState(requestedRole);
+      localStorage.setItem('localkart_token', 'demo_jwt_token_123456');
+      localStorage.setItem('localkart_user', JSON.stringify(mockUser));
+      setActiveScreenState(requestedRole === 'seller' ? 'seller_dashboard' : requestedRole === 'delivery' ? 'delivery_dashboard' : 'home');
       return true;
     }
   };
 
   const switchUserRole = (targetRole: Role) => {
+    if (!user) return;
+    const updatedUser = { ...user, activeRole: targetRole };
+    setUser(updatedUser);
     setActiveRoleState(targetRole);
-    if (user) {
-      const updated = { ...user, activeRole: targetRole };
-      setUser(updated);
-      localStorage.setItem('localkart_user', JSON.stringify(updated));
+    localStorage.setItem('localkart_user', JSON.stringify(updatedUser));
+    
+    if (targetRole === 'seller') {
+      setActiveScreenState('seller_dashboard');
+    } else if (targetRole === 'delivery') {
+      setActiveScreenState('delivery_dashboard');
+    } else {
+      setActiveScreenState('home');
     }
-    if (targetRole === 'customer') setActiveScreenState('home');
-    else if (targetRole === 'seller') setActiveScreenState('seller_dashboard');
-    else if (targetRole === 'delivery') setActiveScreenState('delivery_dashboard');
-    else if (targetRole === 'admin') setActiveScreenState('admin_dashboard');
+    showNotification(`Switched role to ${targetRole.toUpperCase()}`);
   };
 
   const registerCustomer = (name: string, location: string) => {
     if (user) {
-      const updated = { ...user, name };
-      setUser(updated);
-      localStorage.setItem('localkart_user', JSON.stringify(updated));
+      setUser({ ...user, name });
     }
-    setCurrentLocation(location);
-    setActiveScreenState('home');
-    showNotification('Customer Profile Setup Complete!');
   };
 
   const registerSellerAccount = async (storeName: string, category: string, pincode: string, description: string): Promise<boolean> => {
-    if (!user) return false;
-    const updatedRoles: Role[] = Array.from(new Set([...user.roles, 'seller']));
-    const updatedUser: UserProfile = { ...user, roles: updatedRoles, activeRole: 'seller' };
-    setUser(updatedUser);
-    localStorage.setItem('localkart_user', JSON.stringify(updatedUser));
+    try {
+      const res = await fetch(`${API_BASE}/auth/register-seller`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ business_name: storeName, description, pincode, phone: user?.phone })
+      });
+      if (res.ok) {
+        if (user) {
+          const newRoles = [...user.roles, 'seller' as Role];
+          const updated = { ...user, roles: newRoles, activeRole: 'seller' as Role };
+          setUser(updated);
+          localStorage.setItem('localkart_user', JSON.stringify(updated));
+        }
+        setActiveRoleState('seller');
+        setActiveScreenState('seller_dashboard');
+        showNotification("Seller account registered successfully!");
+        return true;
+      }
+    } catch (e) {}
+    showNotification("Registered as seller.");
     setActiveRoleState('seller');
     setActiveScreenState('seller_dashboard');
-    showNotification(`Seller Store "${storeName}" created! Admin approval submitted.`);
     return true;
   };
 
   const registerDeliveryAccount = async (name: string, vehicleType: string, license: string, pincode: string): Promise<boolean> => {
-    if (!user) return false;
-    const updatedRoles: Role[] = Array.from(new Set([...user.roles, 'delivery']));
-    const updatedUser: UserProfile = { ...user, roles: updatedRoles, activeRole: 'delivery' };
-    setUser(updatedUser);
-    localStorage.setItem('localkart_user', JSON.stringify(updatedUser));
+    try {
+      const res = await fetch(`${API_BASE}/auth/register-delivery`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone: user?.phone || '+91 98888 22222', vehicle_type: vehicleType, license_no: license, pincode })
+      });
+      if (res.ok) {
+        if (user) {
+          const newRoles = [...user.roles, 'delivery' as Role];
+          const updated = { ...user, roles: newRoles, activeRole: 'delivery' as Role };
+          setUser(updated);
+          localStorage.setItem('localkart_user', JSON.stringify(updated));
+        }
+        setActiveRoleState('delivery');
+        setActiveScreenState('delivery_dashboard');
+        showNotification("Delivery partner registered successfully!");
+        return true;
+      }
+    } catch (e) {}
+    showNotification("Registered as delivery partner.");
     setActiveRoleState('delivery');
     setActiveScreenState('delivery_dashboard');
-    showNotification(`Delivery Partner profile created! Pending verification.`);
     return true;
   };
 
   const logout = () => {
-    localStorage.removeItem('localkart_token');
-    localStorage.removeItem('localkart_user');
     setIsAuthenticated(false);
     setUser(null);
-    setActiveRoleState('customer');
+    localStorage.removeItem('localkart_token');
+    localStorage.removeItem('localkart_user');
     setActiveScreenState('auth_welcome');
-    showNotification('Logged out successfully.');
-  };
-
-  const setActiveRole = (role: Role) => {
-    switchUserRole(role);
-  };
-
-  const setActiveScreen = (screen: Screen) => {
-    setActiveScreenState(screen);
+    showNotification("Logged out successfully.");
   };
 
   const addToCart = (product: Product, quantity = 1) => {
@@ -360,94 +526,103 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const existing = prev.find(item => item.product.id === product.id);
       if (existing) {
         return prev.map(item =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
+          item.product.id === product.id
+            ? { ...item, quantity: item.quantity + quantity }
+            : item
         );
       }
       return [...prev, { product, quantity }];
     });
-    showNotification(`Added "${product.title}" to local basket!`);
+    showNotification(`Added ${product.title} to Cart`);
   };
 
   const removeFromCart = (productId: string) => {
     setCart(prev => prev.filter(item => item.product.id !== productId));
-    showNotification('Item removed from cart');
   };
 
   const updateCartQuantity = (productId: string, delta: number) => {
-    setCart(prev => prev.map(item => {
-      if (item.product.id === productId) {
-        const newQty = item.quantity + delta;
-        return newQty > 0 ? { ...item, quantity: newQty } : item;
-      }
-      return item;
-    }));
+    setCart(prev =>
+      prev.map(item => {
+        if (item.product.id === productId) {
+          const newQty = item.quantity + delta;
+          return newQty > 0 ? { ...item, quantity: newQty } : item;
+        }
+        return item;
+      })
+    );
   };
 
   const clearCart = () => setCart([]);
 
   const toggleWishlist = (productId: string) => {
-    setWishlist(prev => {
-      const exists = prev.includes(productId);
-      const updated = exists ? prev.filter(id => id !== productId) : [...prev, productId];
-      showNotification(exists ? 'Removed from wishlist' : 'Saved to your wishlist!');
-      return updated;
-    });
+    setWishlist(prev =>
+      prev.includes(productId)
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
   };
 
   const placeOrder = async (deliveryMethod: DeliveryMethod, paymentMethod: PaymentMethod, address: string): Promise<Order | null> => {
-    const subtotal = cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
-    const deliveryFee = deliveryMethod === 'pickup' ? 0 : 30;
-    const total = subtotal + deliveryFee;
-    const orderId = `LK-${Math.floor(10000 + Math.random() * 90000)}`;
-
+    if (cart.length === 0) return null;
+    const subtotal = cart.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
     const newOrder: Order = {
-      id: orderId,
-      createdAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      id: `LK${Math.floor(1000 + Math.random() * 9000)}`,
+      createdAt: new Date().toISOString(),
       items: [...cart],
       subtotal,
-      deliveryFee,
+      deliveryFee: deliveryMethod === 'pickup' ? 0 : 30,
       discount: 0,
-      total,
+      total: subtotal + (deliveryMethod === 'pickup' ? 0 : 30),
       deliveryMethod,
       paymentMethod,
       status: 'placed',
       deliveryAddress: address || currentLocation,
-      sellerId: cart[0]?.product.sellerId || 's1',
-      sellerName: cart[0]?.product.sellerName || 'Riya Handicrafts',
+      sellerId: cart[0].product.sellerId,
+      sellerName: cart[0].product.sellerName,
       sellerPhone: '+91 98765 43210',
-      estimatedArrival: 'In 35 mins',
+      estimatedArrival: 'Today, within 45 mins'
     };
-
     setOrders(prev => [newOrder, ...prev]);
     clearCart();
-    showNotification('Order placed! Supporting local makers 🌱');
+    showNotification(`Order #${newOrder.id} placed successfully!`);
     return newOrder;
   };
 
   const updateOrderStatus = (orderId: string, status: Order['status']) => {
     setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
-    showNotification(`Order ${orderId} status updated`);
   };
 
   const updateDeliveryTaskStatus = (taskId: string, status: DeliveryTask['status']) => {
     setDeliveryTasks(prev => prev.map(t => t.id === taskId ? { ...t, status } : t));
-    showNotification(`Task marked as ${status}`);
   };
 
   const addNewProduct = async (productData: Partial<Product>) => {
-    showNotification('New product added to catalog!');
+    const newP = mapBackendProduct({
+      id: Date.now(),
+      name: productData.title,
+      price: productData.price,
+      category: productData.category,
+      quantity: productData.stock,
+      description: productData.description
+    });
+    setProducts(prev => [newP, ...prev]);
+    showNotification("Product listed successfully!");
   };
 
   return (
     <AppContext.Provider value={{
       activeRole,
-      setActiveRole,
+      setActiveRole: setActiveRoleState,
       activeScreen,
-      setActiveScreen,
+      setActiveScreen: setActiveScreenState,
       viewportMode,
       setViewportMode,
       currentLocation,
       setCurrentLocation,
+      locationData,
+      detectLocationByPin,
+      detectLocationByGps,
+      confirmAndSaveLocation,
       isAuthenticated,
       user,
       phonePendingOtp,
@@ -490,7 +665,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       placeOrder,
       updateOrderStatus,
       updateDeliveryTaskStatus,
-      addNewProduct,
+      addNewProduct
     }}>
       {children}
     </AppContext.Provider>

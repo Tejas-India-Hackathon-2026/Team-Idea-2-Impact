@@ -45,6 +45,18 @@ export type Screen =
 
 export type ViewportMode = 'mobile' | 'tablet' | 'desktop';
 
+export interface LocationData {
+  pincode: string;
+  locality: string;
+  city: string;
+  district: string;
+  state: string;
+  country: string;
+  latitude: number;
+  longitude: number;
+  formattedAddress: string;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -55,6 +67,7 @@ export interface UserProfile {
   pincode: string;
   city: string;
   locality?: string;
+  location?: LocationData;
 }
 
 export interface AuthState {
