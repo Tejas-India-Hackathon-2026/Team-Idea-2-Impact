@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { ShoppingBag, Store, Truck, ArrowRight, ShieldCheck } from 'lucide-react';
 
 export const AuthWelcomeModal: React.FC = () => {
-  const { setActiveScreen } = useApp();
+  const { startLoginFlow, startSignUpFlow } = useApp();
 
   return (
     <div className="auth-welcome-wrapper min-h-screen bg-slate-900 text-white flex flex-col justify-between p-6 sm:p-10 font-sans relative overflow-hidden">
@@ -19,12 +19,12 @@ export const AuthWelcomeModal: React.FC = () => {
         <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white mb-2">
           Local<span className="text-emerald-400">Kart</span>
         </h1>
-        <p className="text-lg sm:text-xl font-medium text-emerald-300/90 tracking-wide">
-          Discover. Buy. Sell. Deliver. Locally.
+        <p className="text-lg sm:text-xl font-bold text-emerald-400 tracking-wide mt-1">
+          Your Local Marketplace
         </p>
       </div>
 
-      {/* Middle Value Props Cards */}
+      {/* Middle Feature Highlights */}
       <div className="relative z-10 my-8 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto w-full">
         <div className="bg-slate-800/80 backdrop-blur border border-slate-700/60 p-4 rounded-2xl flex items-center gap-3 shadow-lg">
           <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
@@ -32,7 +32,7 @@ export const AuthWelcomeModal: React.FC = () => {
           </div>
           <div>
             <h4 className="font-bold text-slate-100 text-sm">Customer</h4>
-            <p className="text-xs text-slate-400">Shop neighborhood artisans</p>
+            <p className="text-xs text-slate-400">Buy products from local sellers</p>
           </div>
         </div>
 
@@ -42,7 +42,7 @@ export const AuthWelcomeModal: React.FC = () => {
           </div>
           <div>
             <h4 className="font-bold text-slate-100 text-sm">Seller</h4>
-            <p className="text-xs text-slate-400">Grow local shop business</p>
+            <p className="text-xs text-slate-400">Sell your products on LocalKart</p>
           </div>
         </div>
 
@@ -51,8 +51,8 @@ export const AuthWelcomeModal: React.FC = () => {
             <Truck className="w-6 h-6" />
           </div>
           <div>
-            <h4 className="font-bold text-slate-100 text-sm">Deliver</h4>
-            <p className="text-xs text-slate-400">Earn per local drop-off</p>
+            <h4 className="font-bold text-slate-100 text-sm">Delivery Partner</h4>
+            <p className="text-xs text-slate-400">Deliver orders and earn</p>
           </div>
         </div>
       </div>
@@ -60,7 +60,7 @@ export const AuthWelcomeModal: React.FC = () => {
       {/* Action Buttons */}
       <div className="relative z-10 max-w-md mx-auto w-full space-y-3 mb-6">
         <button
-          onClick={() => setActiveScreen('login_mobile')}
+          onClick={startLoginFlow}
           className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-lg shadow-lg shadow-emerald-900/50 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
         >
           <span>Login</span>
@@ -68,10 +68,10 @@ export const AuthWelcomeModal: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setActiveScreen('role_select')}
+          onClick={startSignUpFlow}
           className="w-full py-4 px-6 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 font-bold text-lg shadow-md flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
         >
-          Create Account
+          <span>Sign Up</span>
         </button>
 
         <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400 pt-2">

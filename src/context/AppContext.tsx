@@ -36,8 +36,12 @@ interface AppContextType {
   user: UserProfile | null;
   phonePendingOtp: string | null;
   requestedRole: Role;
+  authMode: 'login' | 'signup';
   showAccountSwitcher: boolean;
   setShowAccountSwitcher: (show: boolean) => void;
+  startLoginFlow: () => void;
+  startSignUpFlow: () => void;
+  selectRoleForSignUp: (role: Role) => void;
 
   products: Product[];
   sellers: Seller[];
@@ -118,14 +122,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     initialLocationData = parsedUser.location;
   }
 
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!initialToken);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!initialToken && !!parsedUser);
   const [user, setUser] = useState<UserProfile | null>(parsedUser);
   const [phonePendingOtp, setPhonePendingOtp] = useState<string | null>(null);
   const [requestedRole, setRequestedRole] = useState<Role>('customer');
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [showAccountSwitcher, setShowAccountSwitcher] = useState<boolean>(false);
 
   const [activeRole, setActiveRoleState] = useState<Role>(parsedUser?.activeRole || 'customer');
-  const [activeScreen, setActiveScreenState] = useState<Screen>(!!initialToken ? 'home' : 'auth_welcome');
+
+  const computeInitialScreen = (): Screen => {
+    if (!initialToken || !parsedUser) return 'auth_welcome';
+    const roles = parsedUser.roles || [parsedUser.activeRole || 'customer'];
+    if (roles.length > 1) return 'continue_as';
+    const role = roles[0];
+    if (role === 'seller') return 'seller_dashboard';
+    if (role === 'delivery') return 'delivery_dashboard';
+    return 'home';
+  };
+
+  const [activeScreen, setActiveScreenState] = useState<Screen>(computeInitialScreen);
   const [viewportMode, setViewportMode] = useState<ViewportMode>('desktop');
 
   // Location State
@@ -348,7 +364,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   // OTP & AUTH FLOWS
-  const sendOtp = async (phone: string, role: Role = 'customer'): Promise<boolean> => {
+  const startLoginFlow = () => {
+    setAuthMode('login');
+    setActiveScreenState('login_mobile');
+  };
+
+  const startSignUpFlow = () => {
+    setAuthMode('signup');
+    setActiveScreenState('role_select');
+  };
+
+  const selectRoleForSignUp = (role: Role) => {
+    setRequestedRole(role);
+    setAuthMode('signup');
+    setActiveScreenState('login_mobile');
+  };
+
+  const sendOtp = async (phone: string, role: Role = requestedRole): Promise<boolean> => {
     setPhonePendingOtp(phone);
     setRequestedRole(role);
     try {
@@ -363,9 +395,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return false;
       }
       showNotification(`OTP sent to ${phone}: ${data.demo_otp || '123456'}`);
+      setActiveScreenState('verify_otp');
       return true;
     } catch (err) {
       showNotification("OTP Code: 123456");
+      setActiveScreenState('verify_otp');
       return true;
     }
   };
@@ -384,13 +418,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return false;
       }
 
+      const userRoles: Role[] = data.user.roles || [requestedRole];
+      const primaryRole: Role = data.user.role || requestedRole;
+
       const verifiedUser: UserProfile = {
         id: String(data.user.id),
         name: data.user.name,
         phone: data.user.phone,
         email: data.user.email,
-        roles: data.user.roles || [requestedRole],
-        activeRole: requestedRole,
+        roles: userRoles,
+        activeRole: primaryRole,
         pincode: data.user.pincode || locationData.pincode,
         city: data.user.city || locationData.city,
         location: locationData
@@ -398,27 +435,44 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       setIsAuthenticated(true);
       setUser(verifiedUser);
-      setActiveRoleState(requestedRole);
       localStorage.setItem('localkart_token', 'demo_jwt_token_123456');
       localStorage.setItem('localkart_user', JSON.stringify(verifiedUser));
 
       showNotification(`Welcome to LocalKart, ${verifiedUser.name}!`);
 
-      if (requestedRole === 'seller') {
-        setActiveScreenState('seller_dashboard');
-      } else if (requestedRole === 'delivery') {
-        setActiveScreenState('delivery_dashboard');
+      if (authMode === 'signup') {
+        if (requestedRole === 'seller') {
+          setActiveScreenState('seller_registration');
+        } else if (requestedRole === 'delivery') {
+          setActiveScreenState('delivery_registration');
+        } else {
+          setActiveRoleState('customer');
+          setActiveScreenState('home');
+        }
       } else {
-        setActiveScreenState('home');
+        // Login mode
+        if (userRoles.length > 1) {
+          setActiveScreenState('continue_as');
+        } else if (userRoles.includes('seller')) {
+          setActiveRoleState('seller');
+          setActiveScreenState('seller_dashboard');
+        } else if (userRoles.includes('delivery')) {
+          setActiveRoleState('delivery');
+          setActiveScreenState('delivery_dashboard');
+        } else {
+          setActiveRoleState('customer');
+          setActiveScreenState('home');
+        }
       }
 
       return true;
     } catch (err) {
+      const mockRoles: Role[] = [requestedRole];
       const mockUser: UserProfile = {
         id: 'u1',
         name: 'Demo User',
         phone: phonePendingOtp,
-        roles: [requestedRole],
+        roles: mockRoles,
         activeRole: requestedRole,
         pincode: locationData.pincode,
         city: locationData.city,
@@ -426,10 +480,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
       setIsAuthenticated(true);
       setUser(mockUser);
-      setActiveRoleState(requestedRole);
       localStorage.setItem('localkart_token', 'demo_jwt_token_123456');
       localStorage.setItem('localkart_user', JSON.stringify(mockUser));
-      setActiveScreenState(requestedRole === 'seller' ? 'seller_dashboard' : requestedRole === 'delivery' ? 'delivery_dashboard' : 'home');
+
+      if (authMode === 'signup') {
+        if (requestedRole === 'seller') {
+          setActiveScreenState('seller_registration');
+        } else if (requestedRole === 'delivery') {
+          setActiveScreenState('delivery_registration');
+        } else {
+          setActiveRoleState('customer');
+          setActiveScreenState('home');
+        }
+      } else {
+        if (requestedRole === 'seller') {
+          setActiveRoleState('seller');
+          setActiveScreenState('seller_dashboard');
+        } else if (requestedRole === 'delivery') {
+          setActiveRoleState('delivery');
+          setActiveScreenState('delivery_dashboard');
+        } else {
+          setActiveRoleState('customer');
+          setActiveScreenState('home');
+        }
+      }
       return true;
     }
   };
@@ -466,7 +540,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
       if (res.ok) {
         if (user) {
-          const newRoles = [...user.roles, 'seller' as Role];
+          const currentRoles = user.roles || [];
+          const newRoles = Array.from(new Set([...currentRoles, 'seller' as Role]));
           const updated = { ...user, roles: newRoles, activeRole: 'seller' as Role };
           setUser(updated);
           localStorage.setItem('localkart_user', JSON.stringify(updated));
@@ -477,9 +552,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return true;
       }
     } catch (e) {}
-    showNotification("Registered as seller.");
+    if (user) {
+      const currentRoles = user.roles || [];
+      const newRoles = Array.from(new Set([...currentRoles, 'seller' as Role]));
+      const updated = { ...user, roles: newRoles, activeRole: 'seller' as Role };
+      setUser(updated);
+      localStorage.setItem('localkart_user', JSON.stringify(updated));
+    }
     setActiveRoleState('seller');
     setActiveScreenState('seller_dashboard');
+    showNotification("Registered as seller.");
     return true;
   };
 
@@ -492,7 +574,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
       if (res.ok) {
         if (user) {
-          const newRoles = [...user.roles, 'delivery' as Role];
+          const currentRoles = user.roles || [];
+          const newRoles = Array.from(new Set([...currentRoles, 'delivery' as Role]));
           const updated = { ...user, roles: newRoles, activeRole: 'delivery' as Role };
           setUser(updated);
           localStorage.setItem('localkart_user', JSON.stringify(updated));
@@ -503,9 +586,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return true;
       }
     } catch (e) {}
-    showNotification("Registered as delivery partner.");
+    if (user) {
+      const currentRoles = user.roles || [];
+      const newRoles = Array.from(new Set([...currentRoles, 'delivery' as Role]));
+      const updated = { ...user, roles: newRoles, activeRole: 'delivery' as Role };
+      setUser(updated);
+      localStorage.setItem('localkart_user', JSON.stringify(updated));
+    }
     setActiveRoleState('delivery');
     setActiveScreenState('delivery_dashboard');
+    showNotification("Registered as delivery partner.");
     return true;
   };
 
@@ -715,8 +805,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       user,
       phonePendingOtp,
       requestedRole,
+      authMode,
       showAccountSwitcher,
       setShowAccountSwitcher,
+      startLoginFlow,
+      startSignUpFlow,
+      selectRoleForSignUp,
       products,
       sellers,
       categories,

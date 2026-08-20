@@ -7,6 +7,7 @@ export type Screen =
   | 'role_select'
   | 'seller_registration'
   | 'delivery_registration'
+  | 'continue_as'
   | 'splash' 
   | 'location' 
   | 'onboarding' 

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { ArrowLeft, Phone, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, ShieldCheck } from 'lucide-react';
 
 export const LoginModal: React.FC = () => {
-  const { sendOtp, setActiveScreen, requestedRole } = useApp();
+  const { sendOtp, setActiveScreen, requestedRole, authMode } = useApp();
   const [mobileNumber, setMobileNumber] = useState<string>('9876543210');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -18,13 +18,35 @@ export const LoginModal: React.FC = () => {
     sendOtp(`+91 ${cleaned.slice(-10)}`, requestedRole);
   };
 
+  const getTitle = () => {
+    if (authMode === 'login') return 'Login to LocalKart';
+    if (requestedRole === 'seller') return 'Seller Sign Up';
+    if (requestedRole === 'delivery') return 'Delivery Partner Sign Up';
+    return 'Customer Sign Up';
+  };
+
+  const getSubtitle = () => {
+    if (authMode === 'login') return 'Enter your registered mobile number to continue.';
+    if (requestedRole === 'seller') return 'Enter your mobile number to begin seller registration.';
+    if (requestedRole === 'delivery') return 'Enter your mobile number to begin delivery partner registration.';
+    return 'Enter your mobile number to create your customer account.';
+  };
+
+  const getBackTarget = () => {
+    if (authMode === 'signup') return 'role_select';
+    return 'auth_welcome';
+  };
+
   return (
-    <div className="min-h-screen bg-slate-900 text-white flex flex-col justify-between p-6 sm:p-10 font-sans relative">
-      <div className="relative z-10 max-w-md mx-auto w-full">
+    <div className="min-h-screen bg-slate-900 text-white flex flex-col justify-between p-6 sm:p-10 font-sans relative overflow-hidden">
+      {/* Background Decorative Glow */}
+      <div className="absolute -top-24 -left-24 w-96 h-96 bg-emerald-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div className="relative z-10 max-w-md mx-auto w-full my-auto">
         {/* Top Navigation */}
         <button
-          onClick={() => setActiveScreen('auth_welcome')}
-          className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white mb-6 flex items-center gap-2 text-sm font-medium border border-slate-700"
+          onClick={() => setActiveScreen(getBackTarget())}
+          className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white mb-6 flex items-center gap-2 text-sm font-medium border border-slate-700 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
@@ -32,10 +54,10 @@ export const LoginModal: React.FC = () => {
         {/* Header */}
         <div className="mb-8">
           <h2 className="text-3xl font-black tracking-tight text-white mb-2">
-            Enter Mobile Number
+            {getTitle()}
           </h2>
           <p className="text-slate-400 text-sm">
-            We will send a 6-digit OTP to verify your account safely.
+            {getSubtitle()}
           </p>
         </div>
 
@@ -54,7 +76,7 @@ export const LoginModal: React.FC = () => {
                 type="tel"
                 value={mobileNumber}
                 onChange={(e) => setMobileNumber(e.target.value)}
-                placeholder="Mobile Number"
+                placeholder="Enter mobile number"
                 className="w-full px-4 py-3.5 bg-transparent text-white font-medium focus:outline-none placeholder-slate-500 text-lg tracking-wide"
                 maxLength={12}
                 autoFocus
@@ -74,7 +96,7 @@ export const LoginModal: React.FC = () => {
         <div className="mt-8 bg-slate-800/50 border border-slate-700/50 rounded-2xl p-4 flex items-start gap-3">
           <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
           <p className="text-xs text-slate-400 leading-relaxed">
-            By continuing, you agree to LocalKart's Terms of Service and Privacy Policy. Standard SMS charges may apply.
+            By continuing, you agree to LocalKart's Terms of Service and Privacy Policy. OTP verification will be required on the next step.
           </p>
         </div>
       </div>

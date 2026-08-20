@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { ArrowLeft, CheckCircle, RefreshCw } from 'lucide-react';
 
 export const OTPVerifyModal: React.FC = () => {
-  const { phonePendingOtp, verifyOtp, sendOtp, setActiveScreen, requestedRole } = useApp();
+  const { phonePendingOtp, verifyOtp, sendOtp, setActiveScreen, requestedRole, authMode } = useApp();
   const [otpDigits, setOtpDigits] = useState<string[]>(['1', '2', '3', '4', '5', '6']);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -51,22 +51,25 @@ export const OTPVerifyModal: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white flex flex-col justify-between p-6 sm:p-10 font-sans relative">
-      <div className="relative z-10 max-w-md mx-auto w-full">
+    <div className="min-h-screen bg-slate-900 text-white flex flex-col justify-between p-6 sm:p-10 font-sans relative overflow-hidden">
+      {/* Background Decorative Glow */}
+      <div className="absolute -top-24 -left-24 w-96 h-96 bg-emerald-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div className="relative z-10 max-w-md mx-auto w-full my-auto">
         {/* Top Header Navigation */}
         <button
           onClick={() => setActiveScreen('login_mobile')}
-          className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white mb-6 flex items-center gap-2 text-sm font-medium border border-slate-700"
+          className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white mb-6 flex items-center gap-2 text-sm font-medium border border-slate-700 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
 
-        <div className="mb-8">
+        <div className="mb-8 text-center sm:text-left">
           <h2 className="text-3xl font-black tracking-tight text-white mb-2">
-            Verify your mobile number
+            OTP Verification
           </h2>
           <p className="text-slate-400 text-sm">
-            Enter the 6-digit OTP code sent to <span className="font-bold text-emerald-400">{phonePendingOtp || '+91 98765 43210'}</span>
+            Enter 6-digit OTP code sent to <span className="font-bold text-emerald-400">{phonePendingOtp || '+91 98765 43210'}</span>
           </p>
         </div>
 
@@ -103,7 +106,7 @@ export const OTPVerifyModal: React.FC = () => {
             ) : (
               <>
                 <CheckCircle className="w-5 h-5" />
-                <span>Verify & Continue</span>
+                <span>Verify OTP & Continue</span>
               </>
             )}
           </button>

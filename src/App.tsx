@@ -7,6 +7,7 @@ import { OTPVerifyModal } from './components/OTPVerifyModal';
 import { RoleSelectModal } from './components/RoleSelectModal';
 import { SellerRegisterModal } from './components/SellerRegisterModal';
 import { DeliveryRegisterModal } from './components/DeliveryRegisterModal';
+import { ContinueAsModal } from './components/ContinueAsModal';
 import { AccountSwitcherModal } from './components/AccountSwitcherModal';
 import { HomeView } from './components/HomeView';
 import { ExploreView } from './components/ExploreView';
@@ -27,15 +28,19 @@ import { AdminDashboardView } from './components/AdminDashboardView';
 import { Navigation } from './components/Navigation';
 
 const MainLayout: React.FC = () => {
-  const { activeRole, activeScreen, notification } = useApp();
+  const { activeRole, activeScreen, isAuthenticated, notification } = useApp();
 
-  // Full-screen Auth Flow
+  // Full-screen Auth & Setup Flow
   if (activeScreen === 'auth_welcome') return <AuthWelcomeModal />;
   if (activeScreen === 'login_mobile') return <LoginModal />;
   if (activeScreen === 'verify_otp') return <OTPVerifyModal />;
   if (activeScreen === 'role_select') return <RoleSelectModal />;
   if (activeScreen === 'seller_registration') return <SellerRegisterModal />;
   if (activeScreen === 'delivery_registration') return <DeliveryRegisterModal />;
+  if (activeScreen === 'continue_as') return <ContinueAsModal />;
+
+  // Authentication Security Guard: Unauthenticated users MUST NOT see any platform
+  if (!isAuthenticated) return <AuthWelcomeModal />;
 
   const renderContent = () => {
     if (activeRole === 'design_system') return <DesignSystemViewer />;
@@ -51,7 +56,7 @@ const MainLayout: React.FC = () => {
       return <DeliveryPartnerView />;
     }
 
-    // Customer App screens
+    // Customer App screens (Accessible only when activeRole === 'customer')
     switch (activeScreen) {
       case 'home':
         return <HomeView />;
