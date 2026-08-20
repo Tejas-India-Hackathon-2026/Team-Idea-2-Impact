@@ -16,10 +16,11 @@ export const Navigation: React.FC = () => {
 
   const customerNavItems: { id: Screen; label: string }[] = [
     { id: 'home', label: 'Home' },
+    { id: 'explore', label: 'Products' },
     { id: 'categories', label: 'Categories' },
     { id: 'search', label: 'Search' },
     { id: 'wishlist', label: 'Wishlist' },
-    { id: 'orders', label: 'Orders' },
+    { id: 'orders', label: 'My Orders' },
     { id: 'profile', label: 'Profile' },
   ];
 

@@ -4,7 +4,7 @@ import { ArrowLeft, ShieldCheck } from 'lucide-react';
 
 export const LoginModal: React.FC = () => {
   const { sendOtp, setActiveScreen, requestedRole, authMode } = useApp();
-  const [mobileNumber, setMobileNumber] = useState<string>('9876543210');
+  const [mobileNumber, setMobileNumber] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -19,14 +19,14 @@ export const LoginModal: React.FC = () => {
   };
 
   const getTitle = () => {
-    if (authMode === 'login') return 'Login to LocalKart';
+    if (authMode === 'login') return 'Welcome to LocalKart';
     if (requestedRole === 'seller') return 'Seller Sign Up';
     if (requestedRole === 'delivery') return 'Delivery Partner Sign Up';
     return 'Customer Sign Up';
   };
 
   const getSubtitle = () => {
-    if (authMode === 'login') return 'Enter your registered mobile number to continue.';
+    if (authMode === 'login') return 'Enter your mobile number to continue.';
     if (requestedRole === 'seller') return 'Enter your mobile number to begin seller registration.';
     if (requestedRole === 'delivery') return 'Enter your mobile number to begin delivery partner registration.';
     return 'Enter your mobile number to create your customer account.';
@@ -38,38 +38,34 @@ export const LoginModal: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white flex flex-col justify-between p-6 sm:p-10 font-sans relative overflow-hidden">
-      {/* Background Decorative Glow */}
-      <div className="absolute -top-24 -left-24 w-96 h-96 bg-emerald-600/20 rounded-full blur-3xl pointer-events-none"></div>
-
-      <div className="relative z-10 max-w-md mx-auto w-full my-auto">
-        {/* Top Navigation */}
+    <div style={{ minHeight: '100vh', backgroundColor: '#0f172a', color: '#ffffff', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '24px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <div style={{ maxWidth: '440px', width: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        
         <button
           onClick={() => setActiveScreen(getBackTarget())}
-          className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white mb-6 flex items-center gap-2 text-sm font-medium border border-slate-700 transition-colors"
+          className="btn btn-outline"
+          style={{ width: 'fit-content', color: '#94a3b8', borderColor: '#334155', padding: '6px 14px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
         >
-          <ArrowLeft className="w-4 h-4" /> Back
+          <ArrowLeft size={16} /> Back
         </button>
 
-        {/* Header */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-black tracking-tight text-white mb-2">
+        <div>
+          <h2 style={{ fontSize: '28px', fontWeight: 900, color: '#ffffff', margin: '0 0 6px 0' }}>
             {getTitle()}
           </h2>
-          <p className="text-slate-400 text-sm">
+          <p style={{ fontSize: '14px', color: '#94a3b8', margin: 0 }}>
             {getSubtitle()}
           </p>
         </div>
 
-        {/* Mobile Input Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label className="form-label" style={{ color: '#cbd5e1', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               Mobile Number
             </label>
-            <div className="flex items-center rounded-2xl bg-slate-800 border border-slate-700 overflow-hidden focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all">
-              <div className="px-4 py-3.5 bg-slate-800/80 text-slate-300 font-bold border-r border-slate-700 flex items-center gap-2">
-                <span className="text-lg">🇮🇳</span>
+            <div style={{ display: 'flex', border: '1px solid #334155', borderRadius: '12px', overflow: 'hidden', backgroundColor: '#1e293b' }}>
+              <div style={{ padding: '12px 14px', backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 800, fontSize: '14px', borderRight: '1px solid #334155', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>🇮🇳</span>
                 <span>+91</span>
               </div>
               <input
@@ -77,28 +73,31 @@ export const LoginModal: React.FC = () => {
                 value={mobileNumber}
                 onChange={(e) => setMobileNumber(e.target.value)}
                 placeholder="Enter mobile number"
-                className="w-full px-4 py-3.5 bg-transparent text-white font-medium focus:outline-none placeholder-slate-500 text-lg tracking-wide"
+                className="form-input"
+                style={{ border: 'none', backgroundColor: 'transparent', color: '#ffffff', fontSize: '16px', fontWeight: 700, padding: '12px 14px' }}
                 maxLength={12}
                 autoFocus
               />
             </div>
-            {errorMsg && <p className="text-rose-400 text-xs mt-2 font-medium">{errorMsg}</p>}
+            {errorMsg && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '6px', fontWeight: 600 }}>{errorMsg}</p>}
           </div>
 
           <button
             type="submit"
-            className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-lg shadow-lg shadow-emerald-900/40 transition-all active:scale-[0.98]"
+            className="btn btn-primary"
+            style={{ width: '100%', padding: '14px', fontSize: '16px', fontWeight: 800, borderRadius: '12px', boxShadow: '0 4px 14px rgba(22, 163, 74, 0.35)' }}
           >
             Continue
           </button>
         </form>
 
-        <div className="mt-8 bg-slate-800/50 border border-slate-700/50 rounded-2xl p-4 flex items-start gap-3">
-          <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-          <p className="text-xs text-slate-400 leading-relaxed">
-            By continuing, you agree to LocalKart's Terms of Service and Privacy Policy. OTP verification will be required on the next step.
+        <div className="card" style={{ backgroundColor: '#1e293b', borderColor: '#334155', padding: '14px', borderRadius: '12px', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+          <ShieldCheck size={18} color="#4ade80" style={{ flexShrink: 0, marginTop: '2px' }} />
+          <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0, lineHeight: '1.5' }}>
+            By continuing, you agree to LocalKart's Terms of Service and Privacy Policy. A 6-digit OTP code will be sent to your mobile.
           </p>
         </div>
+
       </div>
     </div>
   );
