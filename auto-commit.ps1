@@ -43,14 +43,17 @@ while ($true) {
             git add .
 
             # Check staged files
-            $stagedFiles = git diff --cached --name-only
-            if ($stagedFiles) {
+            $stagedFiles = @(git diff --cached --name-only)
+            if ($stagedFiles -and $stagedFiles.Count -gt 0 -and $stagedFiles[0] -ne "") {
                 # Generate a short, meaningful description of changed files
                 $fileNames = @()
                 foreach ($f in $stagedFiles) {
-                    $fileNames += [System.IO.Path]::GetFileName($f)
+                    if ($f) {
+                        $base = [System.IO.Path]::GetFileName($f.ToString())
+                        if ($base) { $fileNames += $base }
+                    }
                 }
-                $uniqueNames = $fileNames | Select-Object -Unique
+                $uniqueNames = @($fileNames | Select-Object -Unique)
 
                 if ($uniqueNames.Count -eq 1) {
                     $description = "Update $($uniqueNames[0])"
