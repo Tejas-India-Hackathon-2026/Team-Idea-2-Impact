@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up with OTP — LocalKart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <!-- REUSABLE HEADER -->
+  <header class="site-header">
+    <div class="container">
+      <div class="header-top">
+        <a href="index.html" class="logo">
+          <div class="logo-icon">L</div>
+          <span>Local<span class="logo-highlight">Kart</span></span>
+        </a>
+
+        <ul class="nav-menu">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="products.html" class="nav-link">Products</a></li>
+          <li><a href="seller.html" class="nav-link">Sellers</a></li>
+          <li><a href="seller-dashboard.html" class="nav-link">Seller Dashboard</a></li>
+        </ul>
+
+        <div class="header-actions">
+          <a href="login.html" class="nav-link">Login</a>
+          <a href="signup.html" class="btn btn-primary" style="padding: 6px 14px; font-size: 12px;">Sign Up</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="container" style="max-width: 460px;">
+      <div class="card" style="display: flex; flex-direction: column; gap: 20px;">
+        <div style="text-align: center;">
+          <h1 style="font-size: 22px; font-weight: 800; color: #0f172a;">Join LocalKart</h1>
+          <p style="font-size: 13px; color: #64748b; margin-top: 4px;">Choose your account type to register via Mobile OTP</p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <button onclick="openCustomerAuthModal()" class="btn btn-primary btn-block" style="padding: 14px; text-align: left; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <strong style="font-size: 14px; display: block;">🛒 Customer Account</strong>
+              <span style="font-size: 11px; opacity: 0.9; font-weight: 500;">Buy authentic products from local makers nearby</span>
+            </div>
+            <span>→</span>
+          </button>
+
+          <button onclick="openSellerAuthModal()" class="btn btn-secondary btn-block" style="padding: 14px; text-align: left; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <strong style="font-size: 14px; display: block;">🏪 Become a Seller</strong>
+              <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Sell handmade, farm, food & craft products (0% Joining Fee)</span>
+            </div>
+            <span>→</span>
+          </button>
+
+          <button onclick="openDeliveryPartnerAuthModal()" class="btn btn-secondary btn-block" style="padding: 14px; text-align: left; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <strong style="font-size: 14px; display: block;">🚚 Become a Delivery Partner</strong>
+              <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Deliver orders locally in your neighborhood</span>
+            </div>
+            <span>→</span>
+          </button>
+        </div>
+
+        <div style="text-align: center; font-size: 12px; color: #64748b;">
+          Already have an account? <a href="login.html" style="color: #16a34a; font-weight: 700;">Login with OTP</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div><strong>LocalKart</strong> — “Bringing Local Sellers Closer to Local Buyers.”</div>
+        <div>© 2026 LocalKart. Support Local Economy.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

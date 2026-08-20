@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout — LocalKart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <!-- REUSABLE HEADER -->
+  <header class="site-header">
+    <div class="container">
+      <div class="header-top">
+        <a href="index.html" class="logo">
+          <div class="logo-icon">L</div>
+          <span>Local<span class="logo-highlight">Kart</span></span>
+        </a>
+
+        <ul class="nav-menu">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="products.html" class="nav-link">Products</a></li>
+          <li><a href="seller.html?id=s1" class="nav-link">Sellers</a></li>
+        </ul>
+
+        <div class="header-actions">
+          <a href="cart.html" class="btn btn-outline" style="padding: 6px 12px; font-size: 12px;">Cart (<span class="cart-badge">0</span>)</a>
+          <a href="login.html" class="nav-link">Login</a>
+          <a href="signup.html" class="btn btn-primary" style="padding: 6px 14px; font-size: 12px;">Sign Up</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="container" style="max-width: 650px;">
+      <div class="card" style="display: flex; flex-direction: column; gap: 20px;">
+        <h1 style="font-size: 20px; font-weight: 800; color: #0f172a;">Checkout Order Details</h1>
+        
+        <form onsubmit="processCheckoutOrder(event)" style="display: flex; flex-direction: column; gap: 16px;">
+          
+          <div style="border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+            <h3 style="font-size: 14px; font-weight: 800; color: #0f172a; margin-bottom: 10px;">1. Customer & Delivery Address</h3>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <div class="form-group" style="margin: 0;">
+                <label class="form-label">Full Name</label>
+                <input type="text" id="chk-name" value="Jayesh Sharma" required class="form-input">
+              </div>
+              <div class="form-group" style="margin: 0;">
+                <label class="form-label">Phone Number</label>
+                <input type="tel" id="chk-phone" value="+91 98765 43210" required class="form-input">
+              </div>
+              <div class="form-group" style="margin: 0;">
+                <label class="form-label">Complete Street Address</label>
+                <textarea id="chk-address" rows="2" required class="form-textarea">Flat 402, Sunshine Apartments, Koramangala 4th Block</textarea>
+              </div>
+              <div class="form-group" style="margin: 0;">
+                <label class="form-label">PIN Code</label>
+                <input type="text" id="chk-pin" value="560034" required class="form-input">
+              </div>
+            </div>
+          </div>
+
+          <div style="border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
+            <h3 style="font-size: 14px; font-weight: 800; color: #0f172a; margin-bottom: 10px;">2. Fulfillment Choice</h3>
+            <div style="display: flex; gap: 16px; font-size: 13px;">
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="radio" name="fulfillment" value="Local Delivery" checked>
+                <span>🚚 Local Delivery (~30 mins)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="radio" name="fulfillment" value="Pickup">
+                <span>🏪 Self Store Pickup (Free)</span>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <h3 style="font-size: 14px; font-weight: 800; color: #0f172a; margin-bottom: 10px;">3. Payment Selection</h3>
+            <div style="display: flex; gap: 16px; font-size: 13px;">
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="radio" name="payment" value="Cash on Delivery" checked>
+                <span>💵 Cash on Delivery (COD)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="radio" name="payment" value="UPI Payment">
+                <span>📱 UPI (GPay / Paytm / PhonePe)</span>
+              </label>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block" style="padding: 14px; font-size: 15px; margin-top: 10px;">
+            Confirm & Place Order →
+          </button>
+        </form>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div><strong>LocalKart</strong> — “Bringing Local Sellers Closer to Local Buyers.”</div>
+        <div>© 2026 LocalKart. Support Local Economy.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/cart.js"></script>
+</body>
+</html>

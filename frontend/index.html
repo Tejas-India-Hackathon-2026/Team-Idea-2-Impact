@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LocalKart — Bringing Local Sellers Closer to Local Buyers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <!-- REUSABLE HEADER -->
+  <header class="site-header">
+    <div class="container">
+      <div class="header-top">
+        <a href="index.html" class="logo">
+          <div class="logo-icon">L</div>
+          <span>Local<span class="logo-highlight">Kart</span></span>
+        </a>
+
+        <ul class="nav-menu">
+          <li><a href="index.html" class="nav-link active" data-i18n="home">Home</a></li>
+          <li><a href="products.html" class="nav-link" data-i18n="products">Products</a></li>
+          <li><a href="seller.html" class="nav-link" data-i18n="sellers">Sellers</a></li>
+          <li><a href="orders.html" class="nav-link" data-i18n="myOrders">My Orders</a></li>
+          <li><a href="seller-dashboard.html" class="nav-link" data-i18n="sellerPortal">Seller Dashboard</a></li>
+        </ul>
+
+        <div class="header-actions">
+          <!-- 11 INDIAN LANGUAGES SWITCHER SELECTOR -->
+          <select id="language-switcher" onchange="setLanguage(this.value)" class="form-select" style="padding: 4px 8px; font-size: 11px; font-weight: 700; width: auto;">
+            <option value="en">English (English)</option>
+            <option value="hi">हिंदी (Hindi)</option>
+            <option value="bn">বাংলা (Bengali)</option>
+            <option value="mr">मराठी (Marathi)</option>
+            <option value="ta">தமிழ் (Tamil)</option>
+            <option value="te">తెలుగు (Telugu)</option>
+            <option value="kn">கன்னட (Kannada)</option>
+            <option value="gu">ગુજરાતી (Gujarati)</option>
+            <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+            <option value="ml">മലയാളം (Malayalam)</option>
+            <option value="or">ଓଡ଼ିଆ (Odia)</option>
+          </select>
+
+          <!-- THEME SELECTOR ENGINE -->
+          <div class="theme-selector-box">
+            <span style="color:var(--text-muted);">Theme:</span>
+            <button onclick="setTheme('light')" class="theme-btn" data-theme-val="light">Light</button>
+            <button onclick="setTheme('dark')" class="theme-btn" data-theme-val="dark">Dark</button>
+            <button onclick="setTheme('system')" class="theme-btn active" data-theme-val="system">System</button>
+          </div>
+
+          <a href="cart.html" class="btn btn-outline" style="padding: 6px 12px; font-size: 12px;"><span data-i18n="cart">Cart</span> (<span class="cart-badge">0</span>)</a>
+          <button class="btn btn-primary auth-login-btn" style="padding: 6px 14px; font-size: 12px;">Login / Sign Up</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOCATION BAR WITH RESPONSIVE 2-LINE DISPLAY -->
+    <div class="location-bar">
+      <div class="container location-inner">
+        <div class="location-info" id="header-loc-display">
+          <span>📍 Koramangala 4th Block, Bengaluru (PIN: 560034)</span>
+        </div>
+        <button onclick="openLocationModal()" class="location-change-btn" data-i18n="changeLocation">Change Location</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <div class="container">
+      
+      <!-- HERO SECTION -->
+      <section class="hero-section">
+        <div>
+          <span class="badge badge-verified" style="margin-bottom: 12px;" data-i18n="heroBadge">✓ Verified Local Makers & Artisans</span>
+          <h1 class="hero-title" data-i18n="heroTitle">Support Local Artisans, Home Businesses & Farmers</h1>
+          <p class="hero-subtitle" data-i18n="heroSubtitle">
+            Directly buy authentic handmade pottery, organic farm produce, homemade pickles, and traditional crafts from sellers in your neighborhood.
+          </p>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <a href="products.html" class="btn btn-primary" data-i18n="exploreProducts">Explore Nearby Products →</a>
+            <button onclick="openSellerAuthModal()" class="btn btn-secondary" data-i18n="becomeSeller">+ Become a Seller</button>
+          </div>
+        </div>
+        <div>
+          <img src="https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=800&auto=format&fit=crop&q=80" alt="Local Craftsman" class="hero-img">
+        </div>
+      </section>
+
+      <!-- NEARBY RADIUS DISTANCE SELECTOR FILTER (HAVERSINE MODEL) -->
+      <section style="margin-bottom: 24px;">
+        <div class="card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+          <div>
+            <strong style="font-size:14px; color:var(--text-dark);">📍 Filter Nearby Sellers by Distance:</strong>
+            <span style="font-size:12px; color:var(--text-muted); margin-left:6px;">(Real Geographical Distance Calculation)</span>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button onclick="setNearbyRadius(10)" class="btn btn-sm btn-outline radius-btn" data-r="10">Within 10 km</button>
+            <button onclick="setNearbyRadius(20)" class="btn btn-sm btn-outline radius-btn" data-r="20">Within 20 km</button>
+            <button onclick="setNearbyRadius(30)" class="btn btn-sm btn-primary radius-btn" data-r="30">Within 30 km</button>
+            <button onclick="setNearbyRadius(50)" class="btn btn-sm btn-outline radius-btn" data-r="50">Within 50 km</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- NEARBY LOCAL SELLERS GRID CONTAINER -->
+      <section style="margin-bottom: 32px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 class="section-title" style="margin:0;" data-i18n="verifiedSellersTitle">Verified Local Makers Near You</h2>
+          <a href="products.html" style="font-size: 13px; font-weight: 700; color: var(--primary-green);" data-i18n="viewAllCatalog">View All Catalog →</a>
+        </div>
+        
+        <div id="home-nearby-sellers-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px;">
+          <!-- Dynamically Rendered by JavaScript -->
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div><strong>LocalKart</strong> — “Bringing Local Sellers Closer to Local Buyers.”</div>
+        <div>© 2026 LocalKart. Support Local Economy.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/lang.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    let activeRadiusKm = 30;
+
+    function setNearbyRadius(rKm) {
+      activeRadiusKm = rKm;
+      document.querySelectorAll('.radius-btn').forEach(btn => {
+        if (Number(btn.getAttribute('data-r')) === rKm) {
+          btn.className = 'btn btn-sm btn-primary radius-btn';
+        } else {
+          btn.className = 'btn btn-sm btn-outline radius-btn';
+        }
+      });
+      renderHomeNearbySellers();
+    }
+
+    async function renderHomeNearbySellers() {
+      const container = document.getElementById('home-nearby-sellers-grid');
+      if (!container) return;
+
+      const locObj = getCustomerLocationObj();
+      const userLat = locObj.latitude || 12.934532;
+      const userLng = locObj.longitude || 77.624389;
+
+      let sellers = [];
+      
+      // Fetch nearby sellers from FastAPI backend via Haversine calculation
+      let res = await apiFetch(`/sellers/nearby?lat=${userLat}&lng=${userLng}&radius_km=${activeRadiusKm}`);
+      if (res && res.sellers) {
+        sellers = res.sellers;
+      } else {
+        const localSellers = getSellersFromStorage();
+        sellers = localSellers.map(s => {
+          const dist = calculateHaversineDistance(userLat, userLng, s.latitude || 12.9345, s.longitude || 77.6243);
+          return { ...s, calculatedDistance: dist };
+        }).filter(s => s.calculatedDistance <= activeRadiusKm);
+      }
+
+      if (sellers.length === 0) {
+        container.innerHTML = `
+          <div class="card" style="grid-column: 1 / -1; text-align:center; padding:30px;">
+            <p style="font-size:14px; font-weight:700; color:var(--text-dark);">No sellers found within ${activeRadiusKm} km of your confirmed location.</p>
+            <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">Try expanding search radius to 50 km or changing delivery location.</p>
+            <button onclick="setNearbyRadius(50)" class="btn btn-primary btn-sm" style="margin-top:10px;">Expand to 50 km Radius</button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = sellers.map(s => `
+        <div class="card" style="display:flex; flex-direction:column; gap:12px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <img src="${s.avatar || s.shopPhoto || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80'}" alt="${s.name}" style="width:48px; height:48px; border-radius:50%; object-fit:cover;">
+            <div>
+              <div style="font-size:14px; font-weight:800; color:var(--text-dark);">${s.name}</div>
+              <div style="font-size:11px; color:var(--text-muted);">${s.type} • 📍 ${s.distanceKm || s.calculatedDistance || 2.5} km away</div>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:12px; background:var(--primary-green-light); border:1px solid var(--green-border); padding:8px 10px; border-radius:6px;">
+            <span style="font-weight:700; color:var(--amber-rating);">⭐ ${s.rating}</span>
+            <span style="font-weight:800; color:var(--primary-green-dark);">Quality: ${s.qualityScore}/100</span>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <a href="seller.html?id=${s.id}" class="btn btn-outline" style="flex:1; font-size:11px; padding:6px;">View Shop →</a>
+            <button onclick="openSellerLocationModal('${s.id}')" class="btn btn-secondary" style="font-size:11px; padding:6px;">📍 Map</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371.0;
+      const dlat = (lat2 - lat1) * Math.PI / 180;
+      const dlon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dlat / 2) * Math.sin(dlat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dlon / 2) * Math.sin(dlon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return Math.round(R * c * 10) / 10;
+    }
+
+    document.addEventListener('DOMContentLoaded', renderHomeNearbySellers);
+  </script>
+</body>
+</html>

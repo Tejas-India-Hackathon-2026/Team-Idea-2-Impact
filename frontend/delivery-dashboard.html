@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Delivery Partner Portal — LocalKart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <!-- REUSABLE HEADER -->
+  <header class="site-header">
+    <div class="container">
+      <div class="header-top">
+        <a href="index.html" class="logo">
+          <div class="logo-icon">L</div>
+          <span>Local<span class="logo-highlight">Kart</span></span>
+        </a>
+
+        <ul class="nav-menu">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="products.html" class="nav-link">Products</a></li>
+          <li><a href="seller-dashboard.html" class="nav-link">Seller Dashboard</a></li>
+          <li><a href="delivery-dashboard.html" class="nav-link active">Delivery Portal</a></li>
+        </ul>
+
+        <div class="header-actions">
+          <button class="btn btn-outline auth-login-btn">Login / Sign Up</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+    <div class="container">
+      <div id="delivery-dashboard-container" style="display:flex; flex-direction:column; gap:20px;">
+        
+        <!-- Welcome Banner -->
+        <div style="background:#0f172a; color:#fff; border-radius:14px; padding:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <h1 style="font-size:20px; font-weight:800;">Vijay Kumar's Delivery Portal</h1>
+              <span class="badge badge-verified">Approved Partner ✓</span>
+            </div>
+            <p style="font-size:12px; color:#94a3b8; margin-top:2px;">
+              Vehicle: <strong>Two-Wheeler (KA-01-EV-4821)</strong> • Zone: Koramangala, Bengaluru
+            </p>
+          </div>
+          <span class="badge badge-verified" style="font-size:13px; padding:8px 14px;">🟢 Active & Online</span>
+        </div>
+
+        <!-- Quick Stats -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px;">
+          <div class="card">
+            <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Today's Deliveries</div>
+            <div style="font-size:24px; font-weight:900; color:var(--text-dark); margin-top:4px;">6 Delivered</div>
+          </div>
+          <div class="card">
+            <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Total Distance Covered</div>
+            <div style="font-size:24px; font-weight:900; color:var(--text-dark); margin-top:4px;">18.4 km</div>
+          </div>
+          <div class="card">
+            <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Today's Earnings</div>
+            <div style="font-size:24px; font-weight:900; color:var(--primary-green); margin-top:4px;">₹420.00</div>
+          </div>
+          <div class="card">
+            <div style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Partner Rating</div>
+            <div style="font-size:24px; font-weight:900; color:var(--amber-rating); margin-top:4px;">⭐ 4.9 / 5.0</div>
+          </div>
+        </div>
+
+        <!-- Active Assigned Deliveries -->
+        <div class="card" style="display:flex; flex-direction:column; gap:16px;">
+          <h2 style="font-size:16px; font-weight:800; color:var(--text-dark);">Active Delivery Assignments</h2>
+          
+          <div style="border:1px solid var(--border-color); border-radius:10px; padding:16px; display:flex; flex-direction:column; gap:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong style="font-size:14px; color:var(--text-dark);">Order #LK1002 — Terracotta Vase</strong>
+              <span class="badge badge-warning">On The Way 🛵</span>
+            </div>
+            
+            <div style="font-size:12px; color:var(--text-medium); display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+              <div>📍 <strong>Pickup:</strong> Riya Handicrafts, Koramangala 4th Block</div>
+              <div>🏠 <strong>Delivery:</strong> Flat 201, HSR Layout Sector 2</div>
+            </div>
+
+            <div style="display:flex; gap:8px; margin-top:4px;">
+              <button onclick="showToast('Navigation opened on Google Maps')" class="btn btn-outline btn-sm">🗺️ Open Map Route</button>
+              <button onclick="showToast('Order #LK1002 marked Delivered!')" class="btn btn-primary btn-sm">✓ Mark Delivered</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Verification Documents Status -->
+        <div class="card" style="display:flex; flex-direction:column; gap:12px;">
+          <h3 style="font-size:14px; font-weight:800; color:var(--text-dark);">Delivery Partner Verification Status</h3>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px; font-size:12px;">
+            <div style="border:1px solid var(--border-color); padding:10px; border-radius:6px;">✓ Driving License: <strong>Verified (DL-KA01-2024)</strong></div>
+            <div style="border:1px solid var(--border-color); padding:10px; border-radius:6px;">✓ Vehicle Registration: <strong>Verified (KA-01-EV-4821)</strong></div>
+            <div style="border:1px solid var(--border-color); padding:10px; border-radius:6px;">✓ Background Verification: <strong>Approved</strong></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div><strong>LocalKart</strong> — “Bringing Local Sellers Closer to Local Buyers.”</div>
+        <div>© 2026 LocalKart. Support Local Economy.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

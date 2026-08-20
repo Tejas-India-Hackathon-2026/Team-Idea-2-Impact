@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login with OTP — LocalKart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <!-- REUSABLE HEADER -->
+  <header class="site-header">
+    <div class="container">
+      <div class="header-top">
+        <a href="index.html" class="logo">
+          <div class="logo-icon">L</div>
+          <span>Local<span class="logo-highlight">Kart</span></span>
+        </a>
+
+        <ul class="nav-menu">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="products.html" class="nav-link">Products</a></li>
+          <li><a href="seller.html" class="nav-link">Sellers</a></li>
+          <li><a href="seller-dashboard.html" class="nav-link">Seller Dashboard</a></li>
+        </ul>
+
+        <div class="header-actions">
+          <a href="login.html" class="nav-link active">Login</a>
+          <a href="signup.html" class="btn btn-primary" style="padding: 6px 14px; font-size: 12px;">Sign Up</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="container" style="max-width: 440px;">
+      <div class="card" style="display: flex; flex-direction: column; gap: 20px;">
+        <div style="text-align: center;">
+          <h1 style="font-size: 22px; font-weight: 800; color: #0f172a;">Login to LocalKart</h1>
+          <p style="font-size: 13px; color: #64748b; margin-top: 4px;">Secure 1-Click Mobile OTP Authentication</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; background: var(--bg-light); padding: 4px; border-radius: 8px; border: 1px solid var(--border-color);">
+          <button onclick="openAuthModal('customer')" class="btn btn-sm btn-primary btn-block">Customer</button>
+          <button onclick="openAuthModal('seller')" class="btn btn-sm btn-secondary btn-block">Seller</button>
+          <button onclick="openAuthModal('delivery_partner')" class="btn btn-sm btn-secondary btn-block">Delivery</button>
+        </div>
+
+        <button onclick="openCustomerAuthModal()" class="btn btn-primary btn-block" style="padding: 14px; font-size: 14px;">
+          📱 Enter Mobile Number & Get OTP
+        </button>
+
+        <div style="text-align: center; font-size: 12px; color: #64748b;">
+          New to LocalKart? <a href="signup.html" style="color: #16a34a; font-weight: 700;">Create an Account</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div><strong>LocalKart</strong> — “Bringing Local Sellers Closer to Local Buyers.”</div>
+        <div>© 2026 LocalKart. Support Local Economy.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      openCustomerAuthModal();
+    });
+  </script>
+</body>
+</html>
