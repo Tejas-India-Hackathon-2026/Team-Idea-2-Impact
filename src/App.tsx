@@ -1,9 +1,13 @@
 import React from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { DesignSystemViewer } from './components/DesignSystemViewer';
-import { SplashModal } from './components/SplashModal';
-import { LocationModal } from './components/LocationModal';
-import { OnboardingModal } from './components/OnboardingModal';
+import { AuthWelcomeModal } from './components/AuthWelcomeModal';
+import { LoginModal } from './components/LoginModal';
+import { OTPVerifyModal } from './components/OTPVerifyModal';
+import { RoleSelectModal } from './components/RoleSelectModal';
+import { SellerRegisterModal } from './components/SellerRegisterModal';
+import { DeliveryRegisterModal } from './components/DeliveryRegisterModal';
+import { AccountSwitcherModal } from './components/AccountSwitcherModal';
 import { HomeView } from './components/HomeView';
 import { ExploreView } from './components/ExploreView';
 import { ProductDetailsView } from './components/ProductDetailsView';
@@ -12,6 +16,11 @@ import { CartView } from './components/CartView';
 import { CheckoutView } from './components/CheckoutView';
 import { OrderTrackingView } from './components/OrderTrackingView';
 import { ProfileView } from './components/ProfileView';
+import { CustomerCategoriesView } from './components/CustomerCategoriesView';
+import { CustomerOrdersView } from './components/CustomerOrdersView';
+import { CustomerSearchView } from './components/CustomerSearchView';
+import { SellerSearchView } from './components/SellerSearchView';
+import { DeliverySearchView } from './components/DeliverySearchView';
 import { SellerPortalView } from './components/SellerPortalView';
 import { DeliveryPartnerView } from './components/DeliveryPartnerView';
 import { AdminDashboardView } from './components/AdminDashboardView';
@@ -20,16 +29,37 @@ import { Navigation } from './components/Navigation';
 const MainLayout: React.FC = () => {
   const { activeRole, activeScreen, notification } = useApp();
 
+  // Full-screen Auth Flow
+  if (activeScreen === 'auth_welcome') return <AuthWelcomeModal />;
+  if (activeScreen === 'login_mobile') return <LoginModal />;
+  if (activeScreen === 'verify_otp') return <OTPVerifyModal />;
+  if (activeScreen === 'role_select') return <RoleSelectModal />;
+  if (activeScreen === 'seller_registration') return <SellerRegisterModal />;
+  if (activeScreen === 'delivery_registration') return <DeliveryRegisterModal />;
+
   const renderContent = () => {
     if (activeRole === 'design_system') return <DesignSystemViewer />;
     if (activeRole === 'admin') return <AdminDashboardView />;
-    if (activeRole === 'seller') return <SellerPortalView />;
-    if (activeRole === 'delivery') return <DeliveryPartnerView />;
+
+    if (activeRole === 'seller') {
+      if (activeScreen === 'search') return <SellerSearchView />;
+      return <SellerPortalView />;
+    }
+
+    if (activeRole === 'delivery') {
+      if (activeScreen === 'search') return <DeliverySearchView />;
+      return <DeliveryPartnerView />;
+    }
 
     // Customer App screens
     switch (activeScreen) {
       case 'home':
         return <HomeView />;
+      case 'categories':
+        return <CustomerCategoriesView />;
+      case 'search':
+        return <CustomerSearchView />;
+      case 'wishlist':
       case 'explore':
         return <ExploreView />;
       case 'product_details':
@@ -40,6 +70,8 @@ const MainLayout: React.FC = () => {
         return <CartView />;
       case 'checkout':
         return <CheckoutView />;
+      case 'orders':
+        return <CustomerOrdersView />;
       case 'order_tracking':
         return <OrderTrackingView />;
       case 'profile':
@@ -50,7 +82,7 @@ const MainLayout: React.FC = () => {
   };
 
   return (
-    <div className="app-viewport-wrapper">
+    <div className="app-viewport-wrapper min-h-screen bg-slate-950">
       {/* Toast Notification Banner */}
       {notification && (
         <div className="toast-notification">
@@ -59,16 +91,14 @@ const MainLayout: React.FC = () => {
         </div>
       )}
 
-      {/* Screen Modals Overlays */}
-      {activeRole === 'customer' && activeScreen === 'splash' && <SplashModal />}
-      {activeRole === 'customer' && activeScreen === 'location' && <LocationModal />}
-      {activeRole === 'customer' && activeScreen === 'onboarding' && <OnboardingModal />}
+      {/* Account Switcher Modal Overlay */}
+      <AccountSwitcherModal />
 
-      {/* Main Container */}
-      <div className="main-container">
+      {/* Navigation and Main App Content */}
+      <Navigation />
+      <main className="main-content">
         {renderContent()}
-        <Navigation />
-      </div>
+      </main>
     </div>
   );
 };

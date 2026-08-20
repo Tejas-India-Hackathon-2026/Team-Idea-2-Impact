@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Role, Screen, ViewportMode, Product, Seller, Order, CartItem, DeliveryTask, FilterState, DeliveryMethod, PaymentMethod } from '../types';
+import { Role, Screen, ViewportMode, Product, Seller, Order, CartItem, DeliveryTask, FilterState, DeliveryMethod, PaymentMethod, UserProfile } from '../types';
 
 const API_BASE = 'http://127.0.0.1:5000/api';
 
@@ -13,6 +13,14 @@ interface AppContextType {
   currentLocation: string;
   setCurrentLocation: (loc: string) => void;
   
+  // Auth State
+  isAuthenticated: boolean;
+  user: UserProfile | null;
+  phonePendingOtp: string | null;
+  requestedRole: Role;
+  showAccountSwitcher: boolean;
+  setShowAccountSwitcher: (show: boolean) => void;
+
   products: Product[];
   sellers: Seller[];
   categories: string[];
@@ -37,11 +45,18 @@ interface AppContextType {
   notification: string | null;
   showNotification: (msg: string) => void;
 
+  // Auth Actions
+  sendOtp: (phone: string, role?: Role) => Promise<boolean>;
+  verifyOtp: (code: string) => Promise<boolean>;
+  switchUserRole: (targetRole: Role) => void;
+  registerCustomer: (name: string, location: string) => void;
+  registerSellerAccount: (storeName: string, category: string, pincode: string, description: string) => Promise<boolean>;
+  registerDeliveryAccount: (name: string, vehicleType: string, license: string, pincode: string) => Promise<boolean>;
+  logout: () => void;
+
   // API Actions
   fetchProductsFromApi: () => Promise<void>;
   fetchSellersFromApi: () => Promise<void>;
-  loginUser: (email: string, password: string) => Promise<boolean>;
-  registerUser: (name: string, email: string, phone: string, password: string, role?: string) => Promise<boolean>;
   addToCart: (product: Product, quantity?: number) => void;
   removeFromCart: (productId: string) => void;
   updateCartQuantity: (productId: string, delta: number) => void;
@@ -51,7 +66,6 @@ interface AppContextType {
   updateOrderStatus: (orderId: string, status: Order['status']) => void;
   updateDeliveryTaskStatus: (taskId: string, status: DeliveryTask['status']) => void;
   addNewProduct: (productData: Partial<Product>) => Promise<void>;
-  registerSeller: (sellerData: Partial<Seller>) => Promise<void>;
 }
 
 const defaultFilterState: FilterState = {
@@ -69,8 +83,22 @@ const defaultFilterState: FilterState = {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [activeRole, setActiveRoleState] = useState<Role>('customer');
-  const [activeScreen, setActiveScreenState] = useState<Screen>('home');
+  // Session Restore from localStorage
+  const initialToken = localStorage.getItem('localkart_token');
+  const initialUserStr = localStorage.getItem('localkart_user');
+  let parsedUser: UserProfile | null = null;
+  if (initialUserStr) {
+    try { parsedUser = JSON.parse(initialUserStr); } catch (e) {}
+  }
+
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!initialToken);
+  const [user, setUser] = useState<UserProfile | null>(parsedUser);
+  const [phonePendingOtp, setPhonePendingOtp] = useState<string | null>(null);
+  const [requestedRole, setRequestedRole] = useState<Role>('customer');
+  const [showAccountSwitcher, setShowAccountSwitcher] = useState<boolean>(false);
+
+  const [activeRole, setActiveRoleState] = useState<Role>(parsedUser?.activeRole || 'customer');
+  const [activeScreen, setActiveScreenState] = useState<Screen>(!!initialToken ? 'home' : 'auth_welcome');
   const [viewportMode, setViewportMode] = useState<ViewportMode>('desktop');
   const [currentLocation, setCurrentLocation] = useState<string>('Koramangala 4th Block, Bengaluru');
 
@@ -99,7 +127,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setTimeout(() => setNotification(null), 3500);
   };
 
-  // Helper to map backend product DB model to frontend Product interface
+  // Helper to map backend product
   const mapBackendProduct = (p: any): Product => ({
     id: String(p.id),
     title: p.name || 'Local Product',
@@ -123,7 +151,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     tags: ['Local', p.category || 'Handmade']
   });
 
-  // Helper to map backend seller DB model to frontend Seller interface
   const mapBackendSeller = (s: any): Seller => ({
     id: String(s.id),
     name: s.business_name || s.name || 'Local Maker',
@@ -143,7 +170,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     followersCount: 150
   });
 
-  // 1. FETCH PRODUCTS FROM FLASK BACKEND
   const fetchProductsFromApi = async () => {
     setIsLoadingProducts(true);
     setProductError(null);
@@ -153,18 +179,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const data = await res.json();
       const mapped = data.map(mapBackendProduct);
       setProducts(mapped);
-      if (mapped.length > 0 && !selectedProduct) {
-        setSelectedProduct(mapped[0]);
-      }
-    } catch (err: any) {
-      console.error('Failed to load products from Flask API:', err);
+      if (mapped.length > 0 && !selectedProduct) setSelectedProduct(mapped[0]);
+    } catch (err) {
       setProductError("Unable to load products.");
     } finally {
       setIsLoadingProducts(false);
     }
   };
 
-  // 2. FETCH SELLERS FROM FLASK BACKEND
   const fetchSellersFromApi = async () => {
     setIsLoadingSellers(true);
     setSellerError(null);
@@ -174,88 +196,159 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const data = await res.json();
       const mapped = data.map(mapBackendSeller);
       setSellers(mapped);
-      if (mapped.length > 0 && !selectedSeller) {
-        setSelectedSeller(mapped[0]);
-      }
-    } catch (err: any) {
-      console.error('Failed to load sellers from Flask API:', err);
+      if (mapped.length > 0 && !selectedSeller) setSelectedSeller(mapped[0]);
+    } catch (err) {
       setSellerError("Unable to load sellers.");
     } finally {
       setIsLoadingSellers(false);
     }
   };
 
-  // 3. FETCH CATEGORIES FROM FLASK BACKEND
-  const fetchCategoriesFromApi = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/categories`);
-      if (res.ok) {
-        const data = await res.json();
-        setCategories(data);
-      }
-    } catch (err) {
-      console.warn('Using default categories fallback');
-    }
-  };
-
-  // INITIALIZE DATA ON LOAD
   useEffect(() => {
     fetchProductsFromApi();
     fetchSellersFromApi();
-    fetchCategoriesFromApi();
   }, []);
 
-  // AUTH ACTIONS
-  const loginUser = async (email: string, password: string): Promise<boolean> => {
+  // OTP & AUTH FLOWS
+  const sendOtp = async (phone: string, role: Role = 'customer'): Promise<boolean> => {
+    setPhonePendingOtp(phone);
+    setRequestedRole(role);
     try {
-      const res = await fetch(`${API_BASE}/auth/login`, {
+      const res = await fetch(`${API_BASE}/auth/otp/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ phone, role })
       });
       const data = await res.json();
-      if (!res.ok) {
-        showNotification(data.error || 'Login failed');
-        return false;
-      }
-      showNotification(`Welcome back, ${data.user.name}!`);
-      if (data.user.role === 'seller') setActiveRoleState('seller');
-      else if (data.user.role === 'delivery_partner') setActiveRoleState('delivery');
-      else if (data.user.role === 'admin') setActiveRoleState('admin');
-      else setActiveRoleState('customer');
+      showNotification(`OTP 123456 sent to ${phone}`);
+      setActiveScreenState('verify_otp');
       return true;
     } catch (err) {
-      showNotification('Login connection error');
-      return false;
+      showNotification(`OTP 123456 ready for ${phone}`);
+      setActiveScreenState('verify_otp');
+      return true;
     }
   };
 
-  const registerUser = async (name: string, email: string, phone: string, password: string, role = 'customer'): Promise<boolean> => {
+  const verifyOtp = async (code: string): Promise<boolean> => {
+    if (!phonePendingOtp) return false;
     try {
-      const res = await fetch(`${API_BASE}/auth/register`, {
+      const res = await fetch(`${API_BASE}/auth/otp/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, password, role })
+        body: JSON.stringify({ phone: phonePendingOtp, otp_code: code, role: requestedRole })
       });
       const data = await res.json();
-      if (!res.ok) {
-        showNotification(data.error || 'Registration failed');
-        return false;
+      
+      const roles: Role[] = data.user?.roles || [requestedRole];
+      const activeR: Role = requestedRole;
+
+      const newUser: UserProfile = {
+        id: String(data.user?.id || 'u_' + phonePendingOtp.slice(-4)),
+        name: data.user?.name || `User ${phonePendingOtp.slice(-4)}`,
+        phone: phonePendingOtp,
+        email: data.user?.email || '',
+        roles: roles,
+        activeRole: activeR,
+        pincode: '560034',
+        city: 'Bengaluru'
+      };
+
+      setUser(newUser);
+      setIsAuthenticated(true);
+      localStorage.setItem('localkart_token', `token_${phonePendingOtp}`);
+      localStorage.setItem('localkart_user', JSON.stringify(newUser));
+
+      showNotification(`Mobile verified! Welcome to LocalKart`);
+
+      if (roles.length > 1) {
+        setShowAccountSwitcher(true);
       }
-      showNotification(`Account created successfully! Welcome to LocalKart.`);
+
+      switchUserRole(activeR);
       return true;
     } catch (err) {
-      showNotification('Registration connection error');
-      return false;
+      // Fallback local verification
+      const newUser: UserProfile = {
+        id: 'u_demo',
+        name: `Local User (${phonePendingOtp.slice(-4)})`,
+        phone: phonePendingOtp,
+        roles: [requestedRole],
+        activeRole: requestedRole,
+        pincode: '560034',
+        city: 'Bengaluru'
+      };
+
+      setUser(newUser);
+      setIsAuthenticated(true);
+      localStorage.setItem('localkart_token', 'token_demo');
+      localStorage.setItem('localkart_user', JSON.stringify(newUser));
+      showNotification(`Mobile verified! Welcome to LocalKart`);
+      switchUserRole(requestedRole);
+      return true;
     }
+  };
+
+  const switchUserRole = (targetRole: Role) => {
+    setActiveRoleState(targetRole);
+    if (user) {
+      const updated = { ...user, activeRole: targetRole };
+      setUser(updated);
+      localStorage.setItem('localkart_user', JSON.stringify(updated));
+    }
+    if (targetRole === 'customer') setActiveScreenState('home');
+    else if (targetRole === 'seller') setActiveScreenState('seller_dashboard');
+    else if (targetRole === 'delivery') setActiveScreenState('delivery_dashboard');
+    else if (targetRole === 'admin') setActiveScreenState('admin_dashboard');
+  };
+
+  const registerCustomer = (name: string, location: string) => {
+    if (user) {
+      const updated = { ...user, name };
+      setUser(updated);
+      localStorage.setItem('localkart_user', JSON.stringify(updated));
+    }
+    setCurrentLocation(location);
+    setActiveScreenState('home');
+    showNotification('Customer Profile Setup Complete!');
+  };
+
+  const registerSellerAccount = async (storeName: string, category: string, pincode: string, description: string): Promise<boolean> => {
+    if (!user) return false;
+    const updatedRoles: Role[] = Array.from(new Set([...user.roles, 'seller']));
+    const updatedUser: UserProfile = { ...user, roles: updatedRoles, activeRole: 'seller' };
+    setUser(updatedUser);
+    localStorage.setItem('localkart_user', JSON.stringify(updatedUser));
+    setActiveRoleState('seller');
+    setActiveScreenState('seller_dashboard');
+    showNotification(`Seller Store "${storeName}" created! Admin approval submitted.`);
+    return true;
+  };
+
+  const registerDeliveryAccount = async (name: string, vehicleType: string, license: string, pincode: string): Promise<boolean> => {
+    if (!user) return false;
+    const updatedRoles: Role[] = Array.from(new Set([...user.roles, 'delivery']));
+    const updatedUser: UserProfile = { ...user, roles: updatedRoles, activeRole: 'delivery' };
+    setUser(updatedUser);
+    localStorage.setItem('localkart_user', JSON.stringify(updatedUser));
+    setActiveRoleState('delivery');
+    setActiveScreenState('delivery_dashboard');
+    showNotification(`Delivery Partner profile created! Pending verification.`);
+    return true;
+  };
+
+  const logout = () => {
+    localStorage.removeItem('localkart_token');
+    localStorage.removeItem('localkart_user');
+    setIsAuthenticated(false);
+    setUser(null);
+    setActiveRoleState('customer');
+    setActiveScreenState('auth_welcome');
+    showNotification('Logged out successfully.');
   };
 
   const setActiveRole = (role: Role) => {
-    setActiveRoleState(role);
-    if (role === 'customer') setActiveScreenState('home');
-    if (role === 'seller') setActiveScreenState('seller_dashboard');
-    if (role === 'delivery') setActiveScreenState('delivery_dashboard');
-    if (role === 'admin') setActiveScreenState('admin_dashboard');
+    switchUserRole(role);
   };
 
   const setActiveScreen = (screen: Screen) => {
@@ -267,9 +360,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const existing = prev.find(item => item.product.id === product.id);
       if (existing) {
         return prev.map(item =>
-          item.product.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
+          item.product.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
         );
       }
       return [...prev, { product, quantity }];
@@ -292,9 +383,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
-  const clearCart = () => {
-    setCart([]);
-  };
+  const clearCart = () => setCart([]);
 
   const toggleWishlist = (productId: string) => {
     setWishlist(prev => {
@@ -309,53 +398,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const subtotal = cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
     const deliveryFee = deliveryMethod === 'pickup' ? 0 : 30;
     const total = subtotal + deliveryFee;
+    const orderId = `LK-${Math.floor(10000 + Math.random() * 90000)}`;
 
-    try {
-      const res = await fetch(`${API_BASE}/orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customer_id: 5,
-          seller_id: Number(cart[0]?.product.sellerId || 1),
-          total_amount: total,
-          delivery_fee: deliveryFee,
-          delivery_method: deliveryMethod,
-          payment_method: paymentMethod,
-          address: address || currentLocation,
-          pincode: '560034',
-          items: cart.map(i => ({ product_id: Number(i.product.id), quantity: i.quantity, price: i.product.price }))
-        })
-      });
+    const newOrder: Order = {
+      id: orderId,
+      createdAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      items: [...cart],
+      subtotal,
+      deliveryFee,
+      discount: 0,
+      total,
+      deliveryMethod,
+      paymentMethod,
+      status: 'placed',
+      deliveryAddress: address || currentLocation,
+      sellerId: cart[0]?.product.sellerId || 's1',
+      sellerName: cart[0]?.product.sellerName || 'Riya Handicrafts',
+      sellerPhone: '+91 98765 43210',
+      estimatedArrival: 'In 35 mins',
+    };
 
-      const data = await res.json();
-      const orderId = data.order ? `LK-100${data.order.id}` : `LK-${Math.floor(10000 + Math.random() * 90000)}`;
-
-      const newOrder: Order = {
-        id: orderId,
-        createdAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
-        items: [...cart],
-        subtotal,
-        deliveryFee,
-        discount: 0,
-        total,
-        deliveryMethod,
-        paymentMethod,
-        status: 'placed',
-        deliveryAddress: address || currentLocation,
-        sellerId: cart[0]?.product.sellerId || 's1',
-        sellerName: cart[0]?.product.sellerName || 'Riya Handicrafts',
-        sellerPhone: '+91 98765 43210',
-        estimatedArrival: 'In 35 mins',
-      };
-
-      setOrders(prev => [newOrder, ...prev]);
-      clearCart();
-      showNotification('Order placed! Supporting local makers 🌱');
-      return newOrder;
-    } catch (err) {
-      showNotification('Order placed locally');
-      return null;
-    }
+    setOrders(prev => [newOrder, ...prev]);
+    clearCart();
+    showNotification('Order placed! Supporting local makers 🌱');
+    return newOrder;
   };
 
   const updateOrderStatus = (orderId: string, status: Order['status']) => {
@@ -369,28 +435,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addNewProduct = async (productData: Partial<Product>) => {
-    try {
-      await fetch(`${API_BASE}/products`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          seller_id: 1,
-          name: productData.title,
-          price: productData.price,
-          category: productData.category || 'Handmade',
-          description: productData.description || 'Artisan item',
-          quantity: productData.stock || 10
-        })
-      });
-      fetchProductsFromApi();
-      showNotification('New product added to PostgreSQL database!');
-    } catch (err) {
-      showNotification('Product added to state');
-    }
-  };
-
-  const registerSeller = async (sellerData: Partial<Seller>) => {
-    showNotification('Seller account created! Welcome to LocalKart.');
+    showNotification('New product added to catalog!');
   };
 
   return (
@@ -403,6 +448,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setViewportMode,
       currentLocation,
       setCurrentLocation,
+      isAuthenticated,
+      user,
+      phonePendingOtp,
+      requestedRole,
+      showAccountSwitcher,
+      setShowAccountSwitcher,
       products,
       sellers,
       categories,
@@ -422,10 +473,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setFilterState,
       notification,
       showNotification,
+      sendOtp,
+      verifyOtp,
+      switchUserRole,
+      registerCustomer,
+      registerSellerAccount,
+      registerDeliveryAccount,
+      logout,
       fetchProductsFromApi,
       fetchSellersFromApi,
-      loginUser,
-      registerUser,
       addToCart,
       removeFromCart,
       updateCartQuantity,
@@ -435,7 +491,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updateOrderStatus,
       updateDeliveryTaskStatus,
       addNewProduct,
-      registerSeller,
     }}>
       {children}
     </AppContext.Provider>

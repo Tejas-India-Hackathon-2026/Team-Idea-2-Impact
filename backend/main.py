@@ -375,6 +375,142 @@ def logout(token: Optional[str] = Header(None)):
     return {"status": "success", "message": "Logged out successfully."}
 
 # ----------------------------------------------------
+# APIS: ROLE-TAILORED SEARCH ENGINES
+# ----------------------------------------------------
+@app.get("/api/search/customer")
+def search_customer(
+    q: Optional[str] = "",
+    category: Optional[str] = "all",
+    pincode: Optional[str] = "560034"
+):
+    query_str = (q or "").strip().lower()
+    
+    # Mock product database matching customer requirements
+    sample_products = [
+        {
+            "id": "p1",
+            "title": "Handmade Terracotta Vase",
+            "price": 450.0,
+            "category": "Handmade",
+            "rating": 4.8,
+            "reviewsCount": 12,
+            "distanceKm": 1.2,
+            "locality": "Koramangala",
+            "sellerName": "Riya Handicrafts",
+            "sellerVerified": True,
+            "isHandmade": True,
+            "image": "https://images.unsplash.com/photo-1612196808214-b7e239e5f6b7?w=800&auto=format&fit=crop&q=80",
+            "tags": ["Handmade", "Pottery", "Vase", "Terracotta"]
+        },
+        {
+            "id": "p2",
+            "title": "Handcrafted Bamboo Basket",
+            "price": 299.0,
+            "category": "Handmade",
+            "rating": 4.7,
+            "reviewsCount": 18,
+            "distanceKm": 2.4,
+            "locality": "Indiranagar",
+            "sellerName": "Riya Handicrafts",
+            "sellerVerified": True,
+            "isHandmade": True,
+            "image": "https://images.unsplash.com/photo-1590794056226-79ef3a8147e1?w=800&auto=format&fit=crop&q=80",
+            "tags": ["Handmade", "Bamboo", "Basket"]
+        },
+        {
+            "id": "p3",
+            "title": "Homemade Mango Pickle (500g)",
+            "price": 180.0,
+            "category": "Food",
+            "rating": 4.9,
+            "reviewsCount": 32,
+            "distanceKm": 3.1,
+            "locality": "Koramangala",
+            "sellerName": "Maa Shakti Foods",
+            "sellerVerified": True,
+            "isHandmade": False,
+            "image": "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=800&auto=format&fit=crop&q=80",
+            "tags": ["Food", "Pickle", "Mango"]
+        },
+        {
+            "id": "p4",
+            "title": "Pure Raw Wildflower Honey",
+            "price": 350.0,
+            "category": "Farm Products",
+            "rating": 4.9,
+            "reviewsCount": 24,
+            "distanceKm": 1.8,
+            "locality": "HSR Layout",
+            "sellerName": "Green Valley Farm",
+            "sellerVerified": True,
+            "isHandmade": False,
+            "image": "https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=800&auto=format&fit=crop&q=80",
+            "tags": ["Farm", "Honey", "Organic"]
+        }
+    ]
+
+    filtered = []
+    for p in sample_products:
+        matches_query = not query_str or any(
+            query_str in p["title"].lower() or 
+            query_str in p["category"].lower() or 
+            query_str in p["sellerName"].lower() or
+            any(query_str in tag.lower() for tag in p["tags"])
+        )
+        matches_cat = category == "all" or p["category"].lower() == category.lower()
+        if matches_query and matches_cat:
+            filtered.append(p)
+
+    return {
+        "query": query_str,
+        "category": category,
+        "count": len(filtered),
+        "products": filtered,
+        "suggestions": ["handmade candle", "bamboo basket", "mango pickle", "organic honey", "madhubani painting"]
+    }
+
+@app.get("/api/search/seller")
+def search_seller(q: Optional[str] = "", token: Optional[str] = Header(None)):
+    query_str = (q or "").strip().lower()
+    
+    # Mock seller dataset
+    products = [
+        {"id": "p1", "title": "Handmade Terracotta Vase", "price": 450.0, "stock": 8, "sku": "LK-VASE-01"},
+        {"id": "p2", "title": "Handcrafted Bamboo Basket", "price": 299.0, "stock": 14, "sku": "LK-BAMBOO-02"}
+    ]
+    orders = [
+        {"id": "LK1024", "customerName": "Jayesh Sharma", "total": 480.0, "status": "Placed", "item": "Handmade Terracotta Vase"},
+        {"id": "LK1025", "customerName": "Ananya Roy", "total": 299.0, "status": "Preparing", "item": "Handcrafted Bamboo Basket"}
+    ]
+    
+    filtered_products = [p for p in products if not query_str or query_str in p["title"].lower() or query_str in p["sku"].lower()]
+    filtered_orders = [o for o in orders if not query_str or query_str in o["id"].lower() or query_str in o["customerName"].lower()]
+    low_stock = [p for p in products if p["stock"] <= 10] if query_str == "low stock" else []
+
+    return {
+        "query": query_str,
+        "products": filtered_products,
+        "orders": filtered_orders,
+        "lowStock": low_stock
+    }
+
+@app.get("/api/search/delivery")
+def search_delivery(q: Optional[str] = "", token: Optional[str] = Header(None)):
+    query_str = (q or "").strip().lower()
+    
+    deliveries = [
+        {"id": "DEL-101", "orderId": "LK1024", "pickup": "Riya Handicrafts, Koramangala", "drop": "Jayesh Sharma, Koramangala 4th Block", "status": "Assigned", "earnings": 40.0},
+        {"id": "DEL-102", "orderId": "LK1025", "pickup": "Maa Shakti Foods, Indiranagar", "drop": "Priya V., Indiranagar", "status": "Picked Up", "earnings": 35.0}
+    ]
+    
+    filtered = [d for d in deliveries if not query_str or query_str in d["id"].lower() or query_str in d["orderId"].lower() or query_str in d["status"].lower()]
+
+    return {
+        "query": query_str,
+        "deliveries": filtered
+    }
+
+# ----------------------------------------------------
 # APIS: UNIVERSAL INDIAN PIN CODE GEOCODING
 # ----------------------------------------------------
 INDIAN_PIN_DATABASE = {

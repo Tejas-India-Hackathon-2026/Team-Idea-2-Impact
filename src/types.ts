@@ -1,23 +1,69 @@
 export type Role = 'customer' | 'seller' | 'delivery' | 'admin' | 'design_system';
 
 export type Screen = 
+  | 'auth_welcome'
+  | 'login_mobile'
+  | 'verify_otp'
+  | 'role_select'
+  | 'seller_registration'
+  | 'delivery_registration'
   | 'splash' 
   | 'location' 
   | 'onboarding' 
   | 'home' 
+  | 'categories'
+  | 'search'
+  | 'wishlist'
   | 'explore' 
   | 'product_details' 
   | 'seller_store' 
   | 'cart' 
   | 'checkout' 
+  | 'orders'
   | 'order_tracking' 
   | 'profile' 
   | 'seller_dashboard'
-  | 'seller_registration'
+  | 'seller_shop'
+  | 'seller_products'
+  | 'seller_orders'
+  | 'seller_inventory'
+  | 'seller_returns'
+  | 'seller_complaints'
+  | 'seller_reviews'
+  | 'seller_analytics'
+  | 'seller_earnings'
+  | 'seller_notifications'
+  | 'seller_settings'
   | 'delivery_dashboard'
+  | 'delivery_available'
+  | 'delivery_my_deliveries'
+  | 'delivery_earnings'
+  | 'delivery_history'
+  | 'delivery_notifications'
+  | 'delivery_profile'
   | 'admin_dashboard';
 
 export type ViewportMode = 'mobile' | 'tablet' | 'desktop';
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  roles: Role[];
+  activeRole: Role;
+  pincode: string;
+  city: string;
+  locality?: string;
+}
+
+export interface AuthState {
+  isAuthenticated: boolean;
+  user: UserProfile | null;
+  token: string | null;
+  phonePendingOtp: string | null;
+  requestedRole: Role;
+}
 
 export interface Category {
   id: string;

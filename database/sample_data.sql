@@ -10,6 +10,17 @@ INSERT INTO users (name, email, phone, password, role, latitude, longitude, pinc
 ('Ramesh Express', 'ramesh@delivery.com', '+91 98888 22222', 'DEMO_HASH_PLACEHOLDER', 'delivery_partner', 12.934000, 77.623000, '560034', 'Bengaluru', 'Karnataka'),
 ('LocalKart Admin', 'admin@localkart.com', '+91 90000 00000', 'DEMO_HASH_PLACEHOLDER', 'admin', 12.935000, 77.624000, '560034', 'Bengaluru', 'Karnataka');
 
+INSERT INTO user_roles (user_id, role, approved) VALUES
+(1, 'seller', 1),
+(1, 'customer', 1),
+(2, 'seller', 1),
+(3, 'seller', 1),
+(4, 'seller', 1),
+(5, 'customer', 1),
+(6, 'delivery_partner', 1),
+(6, 'customer', 1),
+(7, 'admin', 1);
+
 INSERT INTO sellers (user_id, business_name, description, location, pincode, self_delivery, delivery_radius, rating, verified) VALUES
 (1, 'Riya Handicrafts', 'Handcrafted terracotta pottery, bamboo art, painted clay items, and eco-friendly home decor sculpted using natural riverbed clay.', 'Koramangala 4th Block, Bengaluru', '560034', TRUE, 5, 4.8, TRUE),
 (2, 'Maa Shakti Foods', 'Authentic traditional homemade pickles, mango achaar, roasted snacks, and papad crafted in small hygienic home batches.', 'Indiranagar 100ft Rd, Bengaluru', '560038', TRUE, 4, 4.7, TRUE),

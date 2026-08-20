@@ -12,6 +12,11 @@ DROP TABLE IF EXISTS orders CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS delivery_partners CASCADE;
 DROP TABLE IF EXISTS sellers CASCADE;
+DROP TABLE IF EXISTS otp_verifications CASCADE;
+DROP TABLE IF EXISTS delivery_partner_profiles CASCADE;
+DROP TABLE IF EXISTS seller_profiles CASCADE;
+DROP TABLE IF EXISTS customer_profiles CASCADE;
+DROP TABLE IF EXISTS user_roles CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
 -- 1. USERS TABLE
@@ -30,6 +35,35 @@ CREATE TABLE users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 1B. USER ROLES TABLE (Allows multiple roles per user)
+CREATE TABLE user_roles (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    role VARCHAR(30) NOT NULL, -- customer, seller, delivery_partner, admin
+    approved BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, role)
+);
+
+-- 1C. CUSTOMER PROFILES TABLE
+CREATE TABLE customer_profiles (
+    id SERIAL PRIMARY KEY,
+    user_id INT UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    favorite_locality VARCHAR(100) DEFAULT 'Koramangala',
+    saved_addresses TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 1D. OTP VERIFICATIONS TABLE
+CREATE TABLE otp_verifications (
+    id SERIAL PRIMARY KEY,
+    phone VARCHAR(20) NOT NULL,
+    otp_code VARCHAR(6) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    is_verified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- 2. SELLERS TABLE
 CREATE TABLE sellers (
     id SERIAL PRIMARY KEY,
@@ -42,6 +76,7 @@ CREATE TABLE sellers (
     delivery_radius INT DEFAULT 5, -- in kilometers
     rating DECIMAL(3, 2) DEFAULT 4.5,
     verified BOOLEAN DEFAULT TRUE,
+    approval_status VARCHAR(30) DEFAULT 'Approved', -- Pending, Approved, Rejected
     latitude DECIMAL(9, 6) DEFAULT 12.934532,
     longitude DECIMAL(9, 6) DEFAULT 77.624389,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -53,12 +88,15 @@ CREATE TABLE delivery_partners (
     user_id INT UNIQUE REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     phone VARCHAR(20) NOT NULL,
+    vehicle_type VARCHAR(50) DEFAULT 'Bike',
+    license_no VARCHAR(50),
     location VARCHAR(200) NOT NULL,
     pincode VARCHAR(10) NOT NULL,
     available BOOLEAN DEFAULT TRUE,
     delivery_radius INT DEFAULT 8,
     total_deliveries INT DEFAULT 0,
     earnings DECIMAL(10, 2) DEFAULT 0.00,
+    approval_status VARCHAR(30) DEFAULT 'Approved', -- Pending, Approved, Rejected
     current_lat DECIMAL(9, 6) DEFAULT 12.934000,
     current_lng DECIMAL(9, 6) DEFAULT 77.623000,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
