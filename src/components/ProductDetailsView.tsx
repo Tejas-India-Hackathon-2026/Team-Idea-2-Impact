@@ -98,7 +98,7 @@ export const ProductDetailsView: React.FC = () => {
               type="text"
               value={customText}
               onChange={(e) => setCustomText(e.target.value)}
-              placeholder="e.g. Engrave name 'Riya' or 'Gift Package with Red Ribbon'"
+              placeholder="e.g. Engrave custom name or gift packaging request notes"
               className="form-input"
               style={{ fontSize: '12px', padding: '8px 10px' }}
             />

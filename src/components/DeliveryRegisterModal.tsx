@@ -5,17 +5,17 @@ import { ArrowLeft, Truck, ShieldCheck, CheckCircle2 } from 'lucide-react';
 export const DeliveryRegisterModal: React.FC = () => {
   const { registerDeliveryAccount, setActiveScreen, user } = useApp();
 
-  const [fullName, setFullName] = useState<string>(user?.name || 'Ramesh Kumar');
-  const [mobileNumber, setMobileNumber] = useState<string>(user?.phone || '9888822222');
-  const [email, setEmail] = useState<string>('ramesh.delivery@localkart.in');
-  const [address, setAddress] = useState<string>('45 Delivery Hub, Koramangala');
-  const [pincode, setPincode] = useState<string>('560034');
-  const [city, setCity] = useState<string>('Bengaluru');
-  const [state, setState] = useState<string>('Karnataka');
-  const [serviceLocation, setServiceLocation] = useState<string>('Koramangala, Indiranagar, HSR Layout');
+  const [fullName, setFullName] = useState<string>(user?.name || '');
+  const [mobileNumber, setMobileNumber] = useState<string>(user?.phone || '');
+  const [email, setEmail] = useState<string>('');
+  const [address, setAddress] = useState<string>('');
+  const [pincode, setPincode] = useState<string>('');
+  const [city, setCity] = useState<string>('');
+  const [state, setState] = useState<string>('');
+  const [serviceLocation, setServiceLocation] = useState<string>('');
   const [vehicleType, setVehicleType] = useState<string>('Two-Wheeler / Scooter');
-  const [licenseNo, setLicenseNo] = useState<string>('DL-KA01-2024-9988');
-  const [paymentInfo, setPaymentInfo] = useState<string>('ramesh@upi / SBI Account');
+  const [licenseNo, setLicenseNo] = useState<string>('');
+  const [paymentInfo, setPaymentInfo] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {

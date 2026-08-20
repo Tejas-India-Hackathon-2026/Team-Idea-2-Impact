@@ -8,7 +8,7 @@ export const DeliverySearchView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const deliveryTasks = [
-    { id: 'DEL-101', orderId: 'LK1024', pickup: 'Riya Handicrafts (Koramangala 4th Block)', drop: 'Jayesh Sharma, Koramangala', status: 'Assigned', fee: 35.0 },
+    { id: 'DEL-101', orderId: 'LK1024', pickup: 'Artisan Handicrafts Studio (Local Market)', drop: 'Customer Address, Neighborhood', status: 'Assigned', fee: 35.0 },
     { id: 'DEL-102', orderId: 'LK1025', pickup: 'Maa Shakti Foods (Indiranagar)', drop: 'Ananya Roy, Indiranagar', status: 'Picked Up', fee: 40.0 },
     { id: 'DEL-103', orderId: 'LK1001', pickup: 'Green Valley Farm (HSR Layout)', drop: 'Rahul Verma, HSR Sector 1', status: 'Delivered', fee: 30.0 }
   ];

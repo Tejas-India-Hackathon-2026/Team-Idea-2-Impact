@@ -5,18 +5,18 @@ import { ArrowLeft, Store, ShieldCheck, CheckCircle2 } from 'lucide-react';
 export const SellerRegisterModal: React.FC = () => {
   const { registerSellerAccount, setActiveScreen, user } = useApp();
 
-  const [fullName, setFullName] = useState<string>(user?.name || 'Riya Sharma');
-  const [mobileNumber, setMobileNumber] = useState<string>(user?.phone || '9876543210');
-  const [storeName, setStoreName] = useState<string>('Riya Handicrafts');
+  const [fullName, setFullName] = useState<string>(user?.name || '');
+  const [mobileNumber, setMobileNumber] = useState<string>(user?.phone || '');
+  const [storeName, setStoreName] = useState<string>('');
   const [category, setCategory] = useState<string>('Handmade');
-  const [description, setDescription] = useState<string>('Handcrafted terracotta pottery, bamboo art, painted clay items');
-  const [address, setAddress] = useState<string>('123 Artisan Street, Koramangala 4th Block');
-  const [pincode, setPincode] = useState<string>('560034');
-  const [city, setCity] = useState<string>('Bengaluru');
-  const [district, setDistrict] = useState<string>('Bengaluru Urban');
-  const [state, setState] = useState<string>('Karnataka');
-  const [gstOrGovtId, setGstOrGovtId] = useState<string>('GSTIN29ABCDE1234F1Z5');
-  const [paymentInfo, setPaymentInfo] = useState<string>('riya@upi / HDFC Bank');
+  const [description, setDescription] = useState<string>('');
+  const [address, setAddress] = useState<string>('');
+  const [pincode, setPincode] = useState<string>('');
+  const [city, setCity] = useState<string>('');
+  const [district, setDistrict] = useState<string>('');
+  const [state, setState] = useState<string>('');
+  const [gstOrGovtId, setGstOrGovtId] = useState<string>('');
+  const [paymentInfo, setPaymentInfo] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {

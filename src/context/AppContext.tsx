@@ -290,12 +290,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     rating: Number(p.rating || 4.5),
     reviewsCount: 12,
     distanceKm: Number(p.distanceKm || p.distance_km || 2.4),
-    locality: p.locality || 'Koramangala',
+    locality: p.locality || p.seller_location || 'Local Area',
     category: p.category || 'Handmade',
     images: [p.image || 'https://images.unsplash.com/photo-1612196808214-b7e239e5f6b7?w=800&auto=format&fit=crop&q=80'],
     description: p.description || 'Artisan item from local seller.',
     sellerId: String(p.seller_id || 1),
-    sellerName: p.sellerName || p.seller_name || 'Riya Handicrafts',
+    sellerName: p.sellerName || p.seller_name || 'Local Seller',
     sellerAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
     sellerVerified: Boolean(p.sellerVerified ?? p.seller_verified ?? true),
     stock: p.quantity || p.stock || 10,
@@ -314,7 +314,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     rating: Number(s.rating || 4.8),
     reviewsCount: 24,
     distanceKm: Number(s.distanceKm || s.distance_km || 2.1),
-    locality: s.locality || s.location || 'Koramangala',
+    locality: s.locality || s.location || 'Local Area',
     verified: Boolean(s.verified ?? true),
     category: s.category || 'Handmade',
     bio: s.description || 'Local seller committed to neighborhood quality.',
@@ -382,7 +382,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActiveScreenState('login_mobile');
   };
 
-  const sendOtp = async (phone: string, role: Role = requestedRole): Promise<boolean> => {
+  const sendOtp = async (phone: string, role: Role = 'customer'): Promise<boolean> => {
     setPhonePendingOtp(phone);
     setRequestedRole(role);
     try {
@@ -397,11 +397,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return false;
       }
       showNotification(`OTP sent to ${phone}: ${data.demo_otp || '123456'}`);
-      setActiveScreenState('verify_otp');
       return true;
     } catch (err) {
       showNotification("OTP Code: 123456");
-      setActiveScreenState('verify_otp');
       return true;
     }
   };
@@ -435,9 +433,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         location: locationData
       };
 
+      const token = data.token || `lk_session_${data.user.id}`;
+
       setIsAuthenticated(true);
       setUser(verifiedUser);
-      localStorage.setItem('localkart_token', 'demo_jwt_token_123456');
+      localStorage.setItem('localkart_token', token);
       localStorage.setItem('localkart_user', JSON.stringify(verifiedUser));
 
       showNotification(`Welcome to LocalKart, ${verifiedUser.name}!`);
@@ -469,44 +469,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       return true;
     } catch (err) {
-      const mockRoles: Role[] = [requestedRole];
-      const mockUser: UserProfile = {
-        id: 'u1',
-        name: 'Demo User',
-        phone: phonePendingOtp,
-        roles: mockRoles,
-        activeRole: requestedRole,
-        pincode: locationData.pincode,
-        city: locationData.city,
-        location: locationData
-      };
-      setIsAuthenticated(true);
-      setUser(mockUser);
-      localStorage.setItem('localkart_token', 'demo_jwt_token_123456');
-      localStorage.setItem('localkart_user', JSON.stringify(mockUser));
-
-      if (authMode === 'signup') {
-        if (requestedRole === 'seller') {
-          setActiveScreenState('seller_registration');
-        } else if (requestedRole === 'delivery') {
-          setActiveScreenState('delivery_registration');
-        } else {
-          setActiveRoleState('customer');
-          setActiveScreenState('home');
-        }
-      } else {
-        if (requestedRole === 'seller') {
-          setActiveRoleState('seller');
-          setActiveScreenState('seller_dashboard');
-        } else if (requestedRole === 'delivery') {
-          setActiveRoleState('delivery');
-          setActiveScreenState('delivery_dashboard');
-        } else {
-          setActiveRoleState('customer');
-          setActiveScreenState('home');
-        }
-      }
-      return true;
+      showNotification("OTP verification failed. Please check backend connection.");
+      return false;
     }
   };
 

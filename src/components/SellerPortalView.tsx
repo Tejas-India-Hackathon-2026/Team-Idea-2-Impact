@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 
 export const SellerPortalView: React.FC = () => {
-  const { products, orders, updateOrderStatus, addNewProduct } = useApp();
+  const { products, orders, updateOrderStatus, addNewProduct, user } = useApp();
 
   const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders'>('dashboard');
 
@@ -33,8 +33,8 @@ export const SellerPortalView: React.FC = () => {
       {/* Header Banner */}
       <div style={{ background: '#0f172a', color: '#ffffff', borderRadius: '16px', padding: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '20px', fontWeight: 800 }}>Riya Handicrafts Seller Portal</h1>
-          <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>Koramangala 4th Block Studio Dashboard</p>
+          <h1 style={{ fontSize: '20px', fontWeight: 800 }}>{user?.name ? `${user.name} Seller Portal` : 'Seller Portal'}</h1>
+          <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>{user?.location?.locality || user?.city ? `${user.location?.locality || user.city} Shop Dashboard` : 'Local Shop Dashboard'}</p>
         </div>
         <button onClick={() => setShowAddProductModal(true)} className="btn btn-primary">
           + Add New Product
