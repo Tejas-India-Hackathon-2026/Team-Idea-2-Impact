@@ -63,12 +63,9 @@ while ($true) {
                     $description = "Update $($uniqueNames.Count) files ($($uniqueNames[0..1] -join ', '), ...)"
                 }
 
-                # Auto-increment commit number #N
-                $commitCount = [int](git rev-list --count HEAD 2>$null)
-                $nextNum = $commitCount + 1
-
-                $commitMsg = "Auto Commit #$nextNum - $description"
+                # Generate commit message without incrementing #N
                 $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+                $commitMsg = "Auto commit: $description ($timestamp)"
 
                 Write-Host "[$timestamp] Creating commit: '$commitMsg'" -ForegroundColor Yellow
                 git commit -m $commitMsg
