@@ -69,6 +69,28 @@ export const ProductDetailsView: React.FC = () => {
             {selectedProduct.description}
           </p>
 
+          {/* Product Customization Section */}
+          <div style={{
+            backgroundColor: '#f8fafc',
+            border: '1px border-dashed #cbd5e1',
+            borderRadius: '10px',
+            padding: '12px',
+            marginTop: '8px'
+          }}>
+            <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-dark)', display: 'block', marginBottom: '4px' }}>
+              🎨 Custom Name / Text Note (Optional)
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Engrave name 'Riya' or 'Gift Package with Red Ribbon'"
+              className="form-input"
+              style={{ fontSize: '12px', padding: '8px 10px' }}
+            />
+            <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+              Handmade items can be customized by the artisan before shipping.
+            </span>
+          </div>
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '10px' }}>
             <label style={{ fontSize: '12px', fontWeight: 700 }}>Quantity:</label>
             <input 

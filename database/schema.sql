@@ -236,3 +236,42 @@ CREATE TABLE review_reports (
     status VARCHAR(30) DEFAULT 'Pending', -- Pending, Reviewed, Dismissed
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 13. COMPLAINTS & DISPUTES TABLE
+CREATE TABLE complaints (
+    id SERIAL PRIMARY KEY,
+    complaint_code VARCHAR(30) UNIQUE NOT NULL,
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    order_id INT REFERENCES orders(id) ON DELETE SET NULL,
+    seller_id INT REFERENCES sellers(id) ON DELETE SET NULL,
+    issue_type VARCHAR(100) NOT NULL, -- Damaged, Missing, Quality, Late Delivery
+    description TEXT NOT NULL,
+    evidence_url TEXT,
+    status VARCHAR(30) DEFAULT 'Open', -- Open, Under Review, Resolved, Dismissed
+    resolution_notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 14. RETURNS TABLE
+CREATE TABLE return_requests (
+    id SERIAL PRIMARY KEY,
+    return_code VARCHAR(30) UNIQUE NOT NULL,
+    customer_id INT REFERENCES users(id) ON DELETE CASCADE,
+    order_id INT REFERENCES orders(id) ON DELETE CASCADE,
+    product_id INT REFERENCES products(id) ON DELETE CASCADE,
+    reason VARCHAR(150) NOT NULL,
+    details TEXT,
+    evidence_url TEXT,
+    status VARCHAR(30) DEFAULT 'Requested', -- Requested, Approved, Rejected, Refunded
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 15. PERFORMANCE INDEXES FOR SEARCH & LOCATION
+CREATE INDEX IF NOT EXISTS idx_users_pincode ON users(pincode);
+CREATE INDEX IF NOT EXISTS idx_user_locations_pincode ON user_locations(pincode);
+CREATE INDEX IF NOT EXISTS idx_sellers_pincode ON sellers(pincode);
+CREATE INDEX IF NOT EXISTS idx_products_seller ON products(seller_id);
+CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
+CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders(customer_id);
+CREATE INDEX IF NOT EXISTS idx_orders_seller ON orders(seller_id);
+CREATE INDEX IF NOT EXISTS idx_delivery_partner ON delivery_requests(delivery_partner_id);
