@@ -1,0 +1,63 @@
+/* LocalKart Green & White Clean Stylesheet */
+
+/* Light background base */
+body {
+  background-color: #F8FAFC;
+  color: #1E293B;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+
+/* Nav Link Active States */
+.nav-link.active {
+  color: #16A34A !important;
+  font-weight: 700 !important;
+}
+
+.mobile-tab.active {
+  color: #16A34A !important;
+  font-weight: 800 !important;
+}
+
+.cat-pill.active {
+  background-color: #16A34A !important;
+  color: #ffffff !important;
+}
+
+/* Card Hover Elevation */
+.product-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.product-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.08);
+}
+
+/* Frame Viewport Mode overrides */
+.frame-mobile {
+  max-width: 400px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  border: 6px solid #1E293B !important;
+  border-radius: 32px !important;
+  background-color: #F8FAFC !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.15) !important;
+  min-height: 750px !important;
+}
+
+.frame-desktop {
+  max-width: 1280px !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
