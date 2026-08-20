@@ -1,0 +1,33 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Public Product Media (Images & Approved Proof Videos)
+    match /products/{productId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Sensitive Seller Verification Documents (ADMIN & Seller Owner ONLY - NO PUBLIC ACCESS)
+    match /sellerVerificationDocs/{sellerId}/{allPaths=**} {
+      allow read: if request.auth != null && (request.auth.token.role == 'ADMIN' || request.auth.uid == sellerId);
+      allow write: if request.auth != null && request.auth.uid == sellerId;
+    }
+
+    // Complaint & Return Evidence Files (Involved Customer, Seller & Admin ONLY)
+    match /complaintEvidence/{complaintId}/{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Customization Reference Files (Involved Customer, Seller & Admin ONLY)
+    match /customizationRefs/{requestId}/{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Review Media (Publicly viewable after review moderation)
+    match /reviewMedia/{reviewId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}
