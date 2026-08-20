@@ -95,7 +95,14 @@ export const ExploreView: React.FC = () => {
         <div className="product-grid">
           {filteredProducts.map(p => (
             <div key={p.id} className="product-card">
-              <img src={p.images[0]} alt={p.title} className="product-card-img" onClick={() => handleProductClick(p)} style={{ cursor: 'pointer' }} />
+              <img 
+                src={p.images[0]} 
+                alt={p.title} 
+                className="product-card-img" 
+                onClick={() => handleProductClick(p)} 
+                onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=800&auto=format&fit=crop&q=80'; }}
+                style={{ cursor: 'pointer' }} 
+              />
               <div className="product-card-body">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span className="product-card-seller">by {p.sellerName}</span>

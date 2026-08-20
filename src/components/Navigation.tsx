@@ -27,43 +27,51 @@ export const Navigation: React.FC = () => {
   return (
     <>
       {/* DESKTOP CUSTOMER HEADER */}
-      <header className="bg-slate-900 border-b border-slate-800 text-white sticky top-0 z-40 shadow-xl font-sans hidden md:block">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            {/* Logo */}
+      <header className="site-header" style={{ backgroundColor: '#0f172a', borderBottom: '1px solid #1e293b', padding: '12px 20px', position: 'sticky', top: 0, zIndex: 100 }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+          
+          {/* Logo & Location */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             <div
               onClick={() => setActiveScreen('home')}
-              className="flex items-center gap-2 cursor-pointer group"
+              className="logo"
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
             >
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white font-extrabold text-lg shadow-md shadow-emerald-900/30 group-hover:scale-105 transition-transform">
+              <div className="logo-icon" style={{ backgroundColor: '#16a34a', color: '#ffffff', borderRadius: '8px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>
                 L
               </div>
-              <span className="font-black text-xl text-white tracking-tight">
-                Local<span className="text-emerald-400">Kart</span>
+              <span style={{ color: '#ffffff', fontWeight: 900, fontSize: '20px', letterSpacing: '-0.5px' }}>
+                Local<span className="logo-highlight" style={{ color: '#4ade80' }}>Kart</span>
               </span>
             </div>
 
             {/* Location Badge */}
             <div
               onClick={() => setActiveScreen('location')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 text-xs text-slate-300 cursor-pointer transition-colors"
+              className="badge"
+              style={{ backgroundColor: '#1e293b', border: '1px solid #334155', color: '#cbd5e1', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600 }}
             >
-              <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span className="truncate max-w-[180px] font-medium">{currentLocation}</span>
+              <MapPin size={14} color="#4ade80" />
+              <span style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{currentLocation}</span>
             </div>
           </div>
 
-          {/* Desktop Navigation Links (Pure Customer Only) */}
-          <nav className="flex items-center gap-1">
+          {/* Desktop Navigation Links */}
+          <nav style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             {customerNavItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setActiveScreen(item.id)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
-                  activeScreen === item.id
-                    ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-900/20'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800'
-                }`}
+                className={`btn btn-sm ${activeScreen === item.id ? 'btn-primary' : 'btn-outline'}`}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  backgroundColor: activeScreen === item.id ? '#16a34a' : 'transparent',
+                  color: activeScreen === item.id ? '#ffffff' : '#cbd5e1',
+                  borderColor: activeScreen === item.id ? '#16a34a' : '#334155'
+                }}
               >
                 {item.label}
               </button>
@@ -71,25 +79,27 @@ export const Navigation: React.FC = () => {
           </nav>
 
           {/* Actions: Cart, Account Switcher & Profile */}
-          <div className="flex items-center gap-2.5">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {user && user.roles.length > 1 && (
               <button
                 onClick={() => setShowAccountSwitcher(true)}
-                className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-300 text-xs font-semibold border border-slate-700 flex items-center gap-1.5"
+                className="btn btn-outline btn-sm"
+                style={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#4ade80', fontSize: '12px', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '6px' }}
               >
-                <UserCheck className="w-3.5 h-3.5" />
+                <UserCheck size={14} />
                 <span>Switch View</span>
               </button>
             )}
 
             <button
               onClick={() => setActiveScreen('cart')}
-              className="relative p-2.5 rounded-xl bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-400 border border-emerald-500/20 flex items-center gap-2 text-xs font-bold transition-all"
+              className="btn btn-primary btn-sm"
+              style={{ backgroundColor: '#16a34a', color: '#ffffff', fontSize: '12px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '8px' }}
             >
-              <ShoppingBag className="w-4 h-4" />
+              <ShoppingBag size={15} />
               <span>Cart</span>
               {totalCartItems > 0 && (
-                <span className="bg-emerald-500 text-slate-950 font-black text-[10px] w-5 h-5 rounded-full flex items-center justify-center">
+                <span style={{ backgroundColor: '#ffffff', color: '#16a34a', borderRadius: '50%', padding: '1px 6px', fontSize: '11px', fontWeight: 900, marginLeft: '2px' }}>
                   {totalCartItems}
                 </span>
               )}
@@ -97,110 +107,56 @@ export const Navigation: React.FC = () => {
 
             <button
               onClick={() => setActiveScreen('profile')}
-              className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs border border-slate-700 flex items-center gap-2"
+              className="btn btn-outline btn-sm"
+              style={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#ffffff', fontSize: '12px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '8px' }}
             >
-              <User className="w-4 h-4 text-emerald-400" />
+              <User size={15} color="#4ade80" />
               <span>{user ? user.name.split(' ')[0] : 'Account'}</span>
             </button>
           </div>
+
         </div>
       </header>
 
-      {/* MOBILE HEADER (Logo, Location Badge, Cart Header) */}
-      <header className="md:hidden sticky top-0 z-40 bg-slate-900 border-b border-slate-800 text-white px-3 py-2.5 flex flex-col gap-2 font-sans">
-        <div className="flex items-center justify-between">
-          <div onClick={() => setActiveScreen('home')} className="flex items-center gap-2 cursor-pointer">
-            <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-extrabold text-sm">
-              L
-            </div>
-            <span className="font-extrabold text-lg text-white">Local<span className="text-emerald-400">Kart</span></span>
-          </div>
-
-          {/* Location Badge on Mobile Header */}
-          <div
-            onClick={() => setActiveScreen('location')}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-800 text-xs text-slate-200 border border-slate-700 cursor-pointer active:scale-95 transition-transform"
-          >
-            <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <span className="truncate max-w-[140px] font-bold">
-              {currentLocation || '📍 Select Location'}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {user && user.roles.length > 1 && (
-              <button
-                onClick={() => setShowAccountSwitcher(true)}
-                className="p-1.5 rounded-lg bg-slate-800 text-emerald-400 text-xs border border-slate-700"
-              >
-                <UserCheck className="w-4 h-4" />
-              </button>
-            )}
-
-            <button
-              onClick={() => setActiveScreen('cart')}
-              className="relative p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-            >
-              <ShoppingBag className="w-5 h-5" />
-              {totalCartItems > 0 && (
-                <span className="absolute -top-1 -right-1 bg-emerald-500 text-slate-950 font-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
-                  {totalCartItems}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* MOBILE CUSTOMER BOTTOM NAVIGATION (Section 14: Home | Categories | Search | Wishlist | Profile) */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-800 py-2 px-3 flex items-center justify-around font-sans shadow-2xl">
+      {/* MOBILE CUSTOMER BOTTOM NAVIGATION */}
+      <div className="md-mobile-nav" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 999, backgroundColor: '#0f172a', borderTop: '1px solid #1e293b', padding: '8px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-around' }}>
         <button
           onClick={() => setActiveScreen('home')}
-          className={`flex flex-col items-center gap-1 text-[11px] font-semibold ${
-            activeScreen === 'home' ? 'text-emerald-400' : 'text-slate-400'
-          }`}
+          style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', fontSize: '11px', fontWeight: 700, color: activeScreen === 'home' ? '#4ade80' : '#94a3b8', cursor: 'pointer' }}
         >
-          <Home className="w-5 h-5" />
+          <Home size={18} />
           <span>Home</span>
         </button>
 
         <button
           onClick={() => setActiveScreen('categories')}
-          className={`flex flex-col items-center gap-1 text-[11px] font-semibold ${
-            activeScreen === 'categories' ? 'text-emerald-400' : 'text-slate-400'
-          }`}
+          style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', fontSize: '11px', fontWeight: 700, color: activeScreen === 'categories' ? '#4ade80' : '#94a3b8', cursor: 'pointer' }}
         >
-          <Grid className="w-5 h-5" />
+          <Grid size={18} />
           <span>Categories</span>
         </button>
 
         <button
           onClick={() => setActiveScreen('search')}
-          className={`flex flex-col items-center gap-1 text-[11px] font-semibold ${
-            activeScreen === 'search' ? 'text-emerald-400' : 'text-slate-400'
-          }`}
+          style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', fontSize: '11px', fontWeight: 700, color: activeScreen === 'search' ? '#4ade80' : '#94a3b8', cursor: 'pointer' }}
         >
-          <Search className="w-5 h-5" />
+          <Search size={18} />
           <span>Search</span>
         </button>
 
         <button
           onClick={() => setActiveScreen('wishlist')}
-          className={`flex flex-col items-center gap-1 text-[11px] font-semibold ${
-            activeScreen === 'wishlist' ? 'text-emerald-400' : 'text-slate-400'
-          }`}
+          style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', fontSize: '11px', fontWeight: 700, color: activeScreen === 'wishlist' ? '#4ade80' : '#94a3b8', cursor: 'pointer' }}
         >
-          <Heart className="w-5 h-5" />
+          <Heart size={18} />
           <span>Wishlist</span>
         </button>
 
         <button
           onClick={() => setActiveScreen('profile')}
-          className={`flex flex-col items-center gap-1 text-[11px] font-semibold ${
-            activeScreen === 'profile' ? 'text-emerald-400' : 'text-slate-400'
-          }`}
+          style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', fontSize: '11px', fontWeight: 700, color: activeScreen === 'profile' ? '#4ade80' : '#94a3b8', cursor: 'pointer' }}
         >
-          <User className="w-5 h-5" />
+          <User size={18} />
           <span>Profile</span>
         </button>
       </div>
