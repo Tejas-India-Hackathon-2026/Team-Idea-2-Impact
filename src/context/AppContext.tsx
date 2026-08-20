@@ -4,15 +4,15 @@ import { Role, Screen, ViewportMode, Product, Seller, Order, CartItem, DeliveryT
 const API_BASE = '/api';
 
 const defaultLocation: LocationData = {
-  pincode: '560034',
-  locality: 'Koramangala 4th Block',
-  city: 'Bengaluru',
-  district: 'Bengaluru Urban',
-  state: 'Karnataka',
+  pincode: '',
+  locality: '',
+  city: '',
+  district: '',
+  state: '',
   country: 'India',
-  latitude: 12.9352,
-  longitude: 77.6245,
-  formattedAddress: 'Koramangala 4th Block, Bengaluru, Karnataka, India'
+  latitude: 0,
+  longitude: 0,
+  formattedAddress: ''
 };
 
 interface AppContextType {
@@ -147,7 +147,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Location State
   const [locationData, setLocationData] = useState<LocationData>(initialLocationData);
   const [currentLocation, setCurrentLocation] = useState<string>(
-    `${initialLocationData.locality || initialLocationData.city}, ${initialLocationData.state}`
+    initialLocationData.pincode
+      ? `${initialLocationData.locality || initialLocationData.city}, ${initialLocationData.state}`
+      : '📍 Select Location'
   );
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -604,6 +606,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUser(null);
     localStorage.removeItem('localkart_token');
     localStorage.removeItem('localkart_user');
+    localStorage.removeItem('localkart_location');
+    try { sessionStorage.clear(); } catch (e) {}
+    setCart([]);
+    setWishlist([]);
+    setLocationData(defaultLocation);
+    setCurrentLocation('📍 Select Location');
+    setActiveRoleState('customer');
     setActiveScreenState('auth_welcome');
     showNotification("Logged out successfully.");
   };
