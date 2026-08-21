@@ -4,6 +4,7 @@ import { ArrowLeft, ShieldCheck, ArrowRight, Sparkles } from 'lucide-react';
 
 export const LoginModal: React.FC = () => {
   const { sendOtp, setActiveScreen, requestedRole, authMode, startLoginFlow, startSignUpFlow } = useApp();
+  const [channel, setChannel] = useState<'sms' | 'whatsapp'>('sms');
   const [phoneNumber, setPhoneNumber] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -17,7 +18,7 @@ export const LoginModal: React.FC = () => {
     }
     setErrorMsg(null);
     setIsLoading(true);
-    const success = await sendOtp(`+91${cleaned.slice(-10)}`, requestedRole);
+    const success = await sendOtp(`+91${cleaned.slice(-10)}`, requestedRole, channel);
     setIsLoading(false);
     if (!success) {
       setErrorMsg('Failed to send OTP. Please check your phone number or connection.');
@@ -57,7 +58,7 @@ export const LoginModal: React.FC = () => {
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-[10px]">
               {isLogin ? 'Login to LocalKart' : 'Create your account'}
             </h2>
-            <p className="text-slate-300 text-xs sm:text-sm font-normal leading-relaxed mb-2">
+            <p className="text-slate-300 text-xs sm:text-sm font-normal leading-relaxed mb-4">
               {isLogin
                 ? 'Enter your registered phone number to receive an OTP.'
                 : 'Enter your phone number to receive a verification OTP.'}
@@ -65,6 +66,37 @@ export const LoginModal: React.FC = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="pt-1">
+            {/* OTP Channel Selector */}
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-slate-200 uppercase tracking-wider mb-2">
+                Receive OTP via
+              </label>
+              <div className="grid grid-cols-2 gap-2 p-1 bg-slate-950 border border-slate-800 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setChannel('sms')}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                    channel === 'sms'
+                      ? 'bg-teal-500 text-slate-950 shadow-md'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <span>💬 SMS Text</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChannel('whatsapp')}
+                  className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                    channel === 'whatsapp'
+                      ? 'bg-emerald-500 text-slate-950 shadow-md'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <span>🟢 WhatsApp</span>
+                </button>
+              </div>
+            </div>
+
             <div className="mb-[12px]">
               <label className="block text-xs font-semibold text-slate-200 uppercase tracking-wider mb-2">
                 Phone Number
@@ -96,10 +128,10 @@ export const LoginModal: React.FC = () => {
               className="w-full h-12 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-400 hover:from-teal-400 hover:to-emerald-300 text-slate-950 font-bold text-sm sm:text-base shadow-lg shadow-teal-950/60 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 mb-[14px]"
             >
               {isLoading ? (
-                <span>Sending OTP...</span>
+                <span>Sending OTP via {channel.toUpperCase()}...</span>
               ) : (
                 <>
-                  <span>Send OTP</span>
+                  <span>Send OTP via {channel === 'whatsapp' ? 'WhatsApp' : 'SMS'}</span>
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}

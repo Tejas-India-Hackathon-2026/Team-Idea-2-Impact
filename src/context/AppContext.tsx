@@ -69,7 +69,7 @@ interface AppContextType {
   showNotification: (msg: string) => void;
 
   // Auth Actions
-  sendOtp: (phone: string, role?: Role) => Promise<boolean>;
+  sendOtp: (phone: string, role?: Role, channel?: string) => Promise<boolean>;
   verifyOtp: (code: string) => Promise<boolean>;
   switchUserRole: (targetRole: Role) => void;
   registerCustomer: (name: string, location: string) => void;
@@ -411,7 +411,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const sendOtp = async (phone: string, role: Role = 'customer'): Promise<boolean> => {
+  const sendOtp = async (phone: string, role: Role = 'customer', channel: string = 'sms'): Promise<boolean> => {
     setPhonePendingOtp(phone);
     setRequestedRole(role);
     setFirebaseConfirmationResult(null);
@@ -419,7 +419,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const hasCustomFirebaseKey = Boolean((import.meta as any).env?.VITE_FIREBASE_API_KEY);
 
     // 1. Try Firebase Phone Authentication if configured
-    if (hasCustomFirebaseKey) {
+    if (hasCustomFirebaseKey && channel === 'sms') {
       try {
         const confirmationResult = await sendFirebasePhoneOtp(phone);
         setFirebaseConfirmationResult(confirmationResult);
@@ -438,7 +438,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const res = await fetch(`${API_BASE}/auth/send-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, role })
+        body: JSON.stringify({ phone, role, channel })
       });
       const data = await res.json();
       if (!res.ok || data.success === false) {

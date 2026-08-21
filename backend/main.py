@@ -95,6 +95,7 @@ class PaymentVerifySchema(BaseModel):
 class SendOTPSchema(BaseModel):
     phone: str
     role: Optional[str] = "customer"
+    channel: Optional[str] = "sms"
 
 class VerifyOTPSchema(BaseModel):
     phone: str
@@ -258,7 +259,7 @@ def send_otp(payload: SendOTPSchema):
 
     # Dispatch via SMS Provider Abstraction
     from backend.services.sms_service import SmsService
-    sms_ok, sms_msg = SmsService.send_otp(full_phone, otp_code)
+    sms_ok, sms_msg = SmsService.send_otp(full_phone, otp_code, channel=payload.channel or "sms")
     if not sms_ok:
         raise HTTPException(status_code=400, detail=sms_msg)
 
