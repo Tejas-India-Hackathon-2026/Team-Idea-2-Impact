@@ -28,7 +28,7 @@ export const CartView: React.FC = () => {
           {/* Cart Items List */}
           <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {cart.map(item => (
-              <div key={item.product.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+              <div key={item.product.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
                 <img src={item.product.images[0]} alt={item.product.title} style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-dark)' }}>{item.product.title}</div>

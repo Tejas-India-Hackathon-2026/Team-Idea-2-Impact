@@ -104,14 +104,14 @@ export const ExploreView: React.FC = () => {
                 style={{ cursor: 'pointer' }} 
               />
               <div className="product-card-body">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
                   <span className="product-card-seller">by {p.sellerName}</span>
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--primary)', background: 'var(--primary-light)', padding: '2px 6px', borderRadius: '4px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--primary)', background: 'var(--primary-light)', padding: '2px 5px', borderRadius: '4px', shrink: 0 }}>
                     📍 {p.distanceKm} km away
                   </span>
                 </div>
                 <h3 className="product-card-title" onClick={() => handleProductClick(p)} style={{ cursor: 'pointer' }}>{p.title}</h3>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
                   <span className="product-card-price">₹{p.price}</span>
                   <button onClick={() => addToCart(p)} className="btn btn-primary btn-sm">Add to Cart</button>
                 </div>

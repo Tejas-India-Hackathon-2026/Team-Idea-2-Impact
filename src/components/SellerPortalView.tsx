@@ -42,14 +42,14 @@ export const SellerPortalView: React.FC = () => {
       </div>
 
       {/* Tabs Switcher */}
-      <div className="card" style={{ display: 'flex', gap: '10px', padding: '8px' }}>
-        <button onClick={() => setActiveTab('dashboard')} className={`btn ${activeTab === 'dashboard' ? 'btn-primary' : 'btn-outline'}`} style={{ flex: 1 }}>
+      <div className="card" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', padding: '8px' }}>
+        <button onClick={() => setActiveTab('dashboard')} className={`btn ${activeTab === 'dashboard' ? 'btn-primary' : 'btn-outline'}`} style={{ flex: '1 1 120px' }}>
           Dashboard Overview
         </button>
-        <button onClick={() => setActiveTab('products')} className={`btn ${activeTab === 'products' ? 'btn-primary' : 'btn-outline'}`} style={{ flex: 1 }}>
+        <button onClick={() => setActiveTab('products')} className={`btn ${activeTab === 'products' ? 'btn-primary' : 'btn-outline'}`} style={{ flex: '1 1 120px' }}>
           Products ({products.length})
         </button>
-        <button onClick={() => setActiveTab('orders')} className={`btn ${activeTab === 'orders' ? 'btn-primary' : 'btn-outline'}`} style={{ flex: 1 }}>
+        <button onClick={() => setActiveTab('orders')} className={`btn ${activeTab === 'orders' ? 'btn-primary' : 'btn-outline'}`} style={{ flex: '1 1 120px' }}>
           Orders Pipeline
         </button>
       </div>

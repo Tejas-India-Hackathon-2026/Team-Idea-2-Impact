@@ -55,7 +55,7 @@ export const ProductDetailsView: React.FC = () => {
           src={selectedProduct.images[0]} 
           alt={selectedProduct.title} 
           onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1612196808214-b7e239e5f6b7?w=800&auto=format&fit=crop&q=80'; }}
-          style={{ width: '100%', height: '320px', objectFit: 'cover', borderRadius: '12px' }} 
+          style={{ width: '100%', maxHeight: '320px', height: 'auto', objectFit: 'cover', borderRadius: '12px' }} 
         />
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

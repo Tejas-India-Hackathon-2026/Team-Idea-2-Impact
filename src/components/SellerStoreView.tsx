@@ -14,7 +14,7 @@ export const SellerStoreView: React.FC = () => {
         ← Back to Home
       </button>
 
-      <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      <div className="card" style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <img src={selectedSeller.avatar} alt={selectedSeller.name} style={{ width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover' }} />
         <div>
           <h1 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-dark)' }}>{selectedSeller.storeName}</h1>

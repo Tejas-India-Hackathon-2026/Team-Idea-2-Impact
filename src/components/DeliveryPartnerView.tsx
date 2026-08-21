@@ -17,7 +17,7 @@ export const DeliveryPartnerView: React.FC = () => {
           <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No unassigned delivery requests nearby right now.</p>
         ) : (
           deliveryTasks.map(t => (
-            <div key={t.id} style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '14px', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div key={t.id} style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '14px', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
               <div>
                 <strong>Task #{t.id} (Order {t.orderId})</strong>
                 <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Pickup: {t.pickupAddress}</div>
