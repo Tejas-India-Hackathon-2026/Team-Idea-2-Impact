@@ -39,8 +39,9 @@ def main():
     print("RUNNING LOCALKART EMAIL + PASSWORD AUTH TEST SUITE")
     print("==================================================")
 
-    test_email = "amit.verma@example.com"
-    test_pass = "SecurePass123"
+    import time
+    test_email = f"amit.verma.{int(time.time())}@example.com"
+    test_pass = "SecurePass@123"
 
     # 1. Invalid Email Signup Test
     status, res = post_json("signup", {"name": "Amit Verma", "email": "bad-email", "password": "Pass123"})
@@ -87,7 +88,7 @@ def main():
     print(f"[OK] [TEST PASS] Generated password reset token: {reset_token[:10]}...")
 
     # 9. Password Reset Test
-    new_pass = "BrandNewPass456"
+    new_pass = "BrandNewPass@456"
     status, res = post_json("reset-password", {"email": test_email, "reset_token": reset_token, "new_password": new_pass})
     assert status == 200 and res.get("success"), f"Expected 200 for password reset, got {res}"
     print("[OK] [TEST PASS] Password reset completed successfully.")

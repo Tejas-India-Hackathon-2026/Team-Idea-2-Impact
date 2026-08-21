@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { ArrowLeft, KeyRound, CheckCircle2, ShieldCheck, Mail, Lock } from 'lucide-react';
+import { ArrowLeft, KeyRound, CheckCircle2, ShieldCheck, Mail, Lock, Check } from 'lucide-react';
 
 export const ForgotPasswordModal: React.FC = () => {
   const { setActiveScreen, showNotification, forgotPassword, resetPassword } = useApp();
@@ -8,9 +8,21 @@ export const ForgotPasswordModal: React.FC = () => {
   const [step, setStep] = useState<'request' | 'reset'>('request');
   const [resetToken, setResetToken] = useState<string>('');
   const [newPassword, setNewPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Live Password Validation Checklist Criteria
+  const pwdReqs = {
+    length: newPassword.length >= 8,
+    uppercase: /[A-Z]/.test(newPassword),
+    lowercase: /[a-z]/.test(newPassword),
+    number: /[0-9]/.test(newPassword),
+    special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(newPassword)
+  };
+
+  const isPasswordValid = Object.values(pwdReqs).every(Boolean);
 
   const handleRequestReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +37,7 @@ export const ForgotPasswordModal: React.FC = () => {
     setIsLoading(false);
 
     if (res.success) {
-      setSuccessMsg('Reset token generated! You can enter your token below to reset your password.');
+      setSuccessMsg('Reset token generated! Enter your token below to set your new password.');
       if (res.token) setResetToken(res.token);
       setStep('reset');
     } else {
@@ -35,13 +47,19 @@ export const ForgotPasswordModal: React.FC = () => {
 
   const handleConfirmReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword.length < 6) {
-      setErrorMsg('New password must be at least 6 characters.');
+    setErrorMsg(null);
+
+    if (!isPasswordValid) {
+      setErrorMsg('New password does not meet all security requirements.');
       return;
     }
-    setErrorMsg(null);
-    setIsLoading(true);
 
+    if (newPassword !== confirmPassword) {
+      setErrorMsg('Passwords do not match. Please verify your confirm password field.');
+      return;
+    }
+
+    setIsLoading(true);
     const success = await resetPassword(email, resetToken, newPassword);
     setIsLoading(false);
 
@@ -57,7 +75,7 @@ export const ForgotPasswordModal: React.FC = () => {
     <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-4 font-sans relative overflow-y-auto box-border select-none">
       <div className="absolute -top-32 -left-32 w-80 h-80 bg-teal-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div className="relative z-10 w-full max-w-[400px] mx-auto flex flex-col items-center justify-center my-auto transition-all box-border px-2 sm:px-0">
+      <div className="relative z-10 w-full max-w-[400px] mx-auto flex flex-col items-center justify-center my-auto transition-all box-border px-2 sm:px-0 py-6">
         <div className="w-full flex items-center justify-start mb-3">
           <button
             onClick={() => setActiveScreen('login_mobile')}
@@ -113,7 +131,7 @@ export const ForgotPasswordModal: React.FC = () => {
               </button>
             </form>
           ) : (
-            <form onSubmit={handleConfirmReset} className="space-y-4 pt-2">
+            <form onSubmit={handleConfirmReset} className="space-y-3.5 pt-2">
               {successMsg && (
                 <p className="text-teal-400 text-xs font-normal bg-teal-500/10 border border-teal-500/20 rounded-xl py-2 px-3">
                   {successMsg}
@@ -136,18 +154,82 @@ export const ForgotPasswordModal: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-200 uppercase tracking-wider mb-1">
-                  New Password (min 6 characters)
+                  New Password
                 </label>
-                <div className="flex items-center h-10 bg-slate-950 border border-slate-800 rounded-xl px-3 focus-within:border-teal-400">
+                <div className="flex items-center h-11 bg-slate-950 border border-teal-500/40 rounded-xl px-3 focus-within:border-teal-400">
                   <Lock className="w-4 h-4 text-teal-400 mr-2 shrink-0" />
                   <input
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Enter new strong password"
+                    placeholder="Enter new password"
                     className="w-full h-full bg-transparent text-white placeholder-slate-500 text-xs focus:outline-none"
                     required
                   />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-200 uppercase tracking-wider mb-1">
+                  Confirm Password
+                </label>
+                <div className="flex items-center h-11 bg-slate-950 border border-teal-500/40 rounded-xl px-3 focus-within:border-teal-400">
+                  <Lock className="w-4 h-4 text-teal-400 mr-2 shrink-0" />
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter new password"
+                    className="w-full h-full bg-transparent text-white placeholder-slate-500 text-xs focus:outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Password Strength Checklist Requirements */}
+              <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-xl space-y-1.5 text-xs text-slate-300">
+                <p className="font-semibold text-slate-400 text-[10px] uppercase tracking-wider mb-1">
+                  Password Requirements:
+                </p>
+                <div className="flex items-center gap-2">
+                  <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${pwdReqs.length ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                    {pwdReqs.length ? <Check className="w-3 h-3 stroke-[3]" /> : '•'}
+                  </span>
+                  <span className={pwdReqs.length ? 'text-emerald-400 font-medium' : 'text-slate-400'}>
+                    At least 8 characters
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${pwdReqs.uppercase ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                    {pwdReqs.uppercase ? <Check className="w-3 h-3 stroke-[3]" /> : '•'}
+                  </span>
+                  <span className={pwdReqs.uppercase ? 'text-emerald-400 font-medium' : 'text-slate-400'}>
+                    One uppercase letter (A-Z)
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${pwdReqs.lowercase ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                    {pwdReqs.lowercase ? <Check className="w-3 h-3 stroke-[3]" /> : '•'}
+                  </span>
+                  <span className={pwdReqs.lowercase ? 'text-emerald-400 font-medium' : 'text-slate-400'}>
+                    One lowercase letter (a-z)
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${pwdReqs.number ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                    {pwdReqs.number ? <Check className="w-3 h-3 stroke-[3]" /> : '•'}
+                  </span>
+                  <span className={pwdReqs.number ? 'text-emerald-400 font-medium' : 'text-slate-400'}>
+                    One number (0-9)
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${pwdReqs.special ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                    {pwdReqs.special ? <Check className="w-3 h-3 stroke-[3]" /> : '•'}
+                  </span>
+                  <span className={pwdReqs.special ? 'text-emerald-400 font-medium' : 'text-slate-400'}>
+                    One special character (!@#$%^&*)
+                  </span>
                 </div>
               </div>
 

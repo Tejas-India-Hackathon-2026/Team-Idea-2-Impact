@@ -1,16 +1,28 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { ArrowLeft, ShieldCheck, ArrowRight, Sparkles, Mail, Lock, User as UserIcon } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, ArrowRight, Sparkles, Mail, Lock, User as UserIcon, Check } from 'lucide-react';
 
 export const LoginModal: React.FC = () => {
   const { loginWithEmail, signupWithEmail, setActiveScreen, requestedRole, authMode, startLoginFlow, startSignUpFlow } = useApp();
   const [name, setName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const isLogin = authMode === 'login';
+
+  // Live Password Validation Checklist Criteria
+  const pwdReqs = {
+    length: password.length >= 8,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    number: /[0-9]/.test(password),
+    special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+  };
+
+  const isPasswordValid = Object.values(pwdReqs).every(Boolean);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,26 +35,34 @@ export const LoginModal: React.FC = () => {
       return;
     }
 
-    // Password strength validation
-    if (password.length < 6) {
-      setErrorMsg('Password must be at least 6 characters long.');
-      return;
-    }
-
-    if (!isLogin && !name.trim()) {
-      setErrorMsg('Please enter your full name to sign up.');
-      return;
-    }
-
-    setIsLoading(true);
-
     if (isLogin) {
+      if (!password) {
+        setErrorMsg('Please enter your password.');
+        return;
+      }
+      setIsLoading(true);
       const res = await loginWithEmail(email.trim(), password);
       setIsLoading(false);
       if (!res.success) {
         setErrorMsg(res.message || 'Invalid email address or password.');
       }
     } else {
+      if (!name.trim()) {
+        setErrorMsg('Please enter your full name.');
+        return;
+      }
+
+      if (!isPasswordValid) {
+        setErrorMsg('Password does not meet all security requirements listed below.');
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        setErrorMsg('Passwords do not match. Please verify your confirm password field.');
+        return;
+      }
+
+      setIsLoading(true);
       const res = await signupWithEmail(name.trim(), email.trim(), password, requestedRole);
       setIsLoading(false);
       if (!res.success) {
@@ -57,7 +77,7 @@ export const LoginModal: React.FC = () => {
       <div className="absolute -top-32 -left-32 w-80 h-80 bg-teal-500/15 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute -bottom-32 -right-32 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div className="relative z-10 w-full max-w-[400px] mx-auto flex flex-col items-center justify-center my-auto transition-all box-border px-2 sm:px-0">
+      <div className="relative z-10 w-full max-w-[400px] mx-auto flex flex-col items-center justify-center my-auto transition-all box-border px-2 sm:px-0 py-6">
         {/* Top Navigation */}
         <div className="w-full flex items-center justify-start mb-3">
           <button
@@ -76,13 +96,13 @@ export const LoginModal: React.FC = () => {
               <Sparkles className="w-3.5 h-3.5" />
               <span>{isLogin ? 'Welcome Back' : 'Create Account'}</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-[10px]">
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-[8px]">
               {isLogin ? 'Login to LocalKart' : 'Sign Up for LocalKart'}
             </h2>
             <p className="text-slate-300 text-xs sm:text-sm font-normal leading-relaxed mb-4">
               {isLogin
                 ? 'Enter your registered email address and password.'
-                : 'Enter your name, email address, and strong password.'}
+                : 'Enter your name, email, and password to create an account.'}
             </p>
           </div>
 
@@ -146,12 +166,80 @@ export const LoginModal: React.FC = () => {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="Enter password"
                   className="w-full h-full bg-transparent text-white placeholder-slate-500 text-sm focus:outline-none"
                   required
                 />
               </div>
             </div>
+
+            {!isLogin && (
+              <>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-200 uppercase tracking-wider mb-1.5">
+                    Confirm Password
+                  </label>
+                  <div className="flex items-center h-12 bg-slate-950 border border-teal-500/40 rounded-xl overflow-hidden px-3 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-400/30 transition-all">
+                    <Lock className="w-4 h-4 text-teal-400 mr-2.5 shrink-0" />
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Re-enter password"
+                      className="w-full h-full bg-transparent text-white placeholder-slate-500 text-sm focus:outline-none"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Password Strength Checklist Requirements */}
+                <div className="p-3.5 bg-slate-950/80 border border-slate-800 rounded-xl space-y-1.5 text-xs text-slate-300">
+                  <p className="font-semibold text-slate-400 text-[11px] uppercase tracking-wider mb-1">
+                    Password Requirements:
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${pwdReqs.length ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                      {pwdReqs.length ? <Check className="w-3 h-3 stroke-[3]" /> : '•'}
+                    </span>
+                    <span className={pwdReqs.length ? 'text-emerald-400 font-medium' : 'text-slate-400'}>
+                      At least 8 characters
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${pwdReqs.uppercase ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                      {pwdReqs.uppercase ? <Check className="w-3 h-3 stroke-[3]" /> : '•'}
+                    </span>
+                    <span className={pwdReqs.uppercase ? 'text-emerald-400 font-medium' : 'text-slate-400'}>
+                      One uppercase letter (A-Z)
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${pwdReqs.lowercase ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                      {pwdReqs.lowercase ? <Check className="w-3 h-3 stroke-[3]" /> : '•'}
+                    </span>
+                    <span className={pwdReqs.lowercase ? 'text-emerald-400 font-medium' : 'text-slate-400'}>
+                      One lowercase letter (a-z)
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${pwdReqs.number ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                      {pwdReqs.number ? <Check className="w-3 h-3 stroke-[3]" /> : '•'}
+                    </span>
+                    <span className={pwdReqs.number ? 'text-emerald-400 font-medium' : 'text-slate-400'}>
+                      One number (0-9)
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${pwdReqs.special ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                      {pwdReqs.special ? <Check className="w-3 h-3 stroke-[3]" /> : '•'}
+                    </span>
+                    <span className={pwdReqs.special ? 'text-emerald-400 font-medium' : 'text-slate-400'}>
+                      One special character (!@#$%^&*)
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
 
             {errorMsg && (
               <p className="text-rose-400 text-xs sm:text-sm font-normal bg-rose-500/10 border border-rose-500/20 rounded-xl py-2 px-3">

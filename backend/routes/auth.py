@@ -16,6 +16,19 @@ SESSIONS: dict = {}
 
 EMAIL_REGEX = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
 
+def validate_password_strength(password: str) -> Optional[str]:
+    if len(password) < 8:
+        return "Password must be at least 8 characters long."
+    if not re.search(r'[A-Z]', password):
+        return "Password must contain at least one uppercase letter (A-Z)."
+    if not re.search(r'[a-z]', password):
+        return "Password must contain at least one lowercase letter (a-z)."
+    if not re.search(r'[0-9]', password):
+        return "Password must contain at least one number (0-9)."
+    if not re.search(r'[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?]', password):
+        return "Password must contain at least one special character (e.g. !@#$%^&*)."
+    return None
+
 # ----------------------------------------------------
 # PYDANTIC SCHEMAS
 # ----------------------------------------------------
@@ -59,11 +72,12 @@ def signup_user(payload: SignupSchema):
             detail="Invalid email address format. Please enter a valid email (e.g. user@example.com)."
         )
 
-    # 2. Password Strength Validation
-    if len(password) < 6:
+    # 2. Strict Password Strength Validation
+    pwd_err = validate_password_strength(password)
+    if pwd_err:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password must be at least 6 characters long."
+            detail=pwd_err
         )
 
     if not name:
@@ -219,8 +233,9 @@ def reset_password(payload: ResetPasswordSchema):
     Resets user password using valid reset token.
     """
     email = payload.email.strip().lower()
-    if len(payload.new_password) < 6:
-        raise HTTPException(status_code=400, detail="New password must be at least 6 characters long.")
+    pwd_err = validate_password_strength(payload.new_password)
+    if pwd_err:
+        raise HTTPException(status_code=400, detail=pwd_err)
 
     user = query_db("SELECT * FROM users WHERE LOWER(email) = ?", (email,), one=True)
     if not user or user.get("reset_token") != payload.reset_token:
