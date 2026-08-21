@@ -32,6 +32,8 @@ from backend.routes.complaints import router as complaints_router
 from backend.routes.admin import router as admin_router
 from backend.routes.chat import router as chat_router
 from backend.routes.uploads import router as uploads_router
+from backend.routes.payments import router as payments_router
+from backend.routes.location import router as location_router
 
 app = FastAPI(
     title="LocalKart FastAPI Backend",
@@ -63,6 +65,8 @@ app.include_router(complaints_router)
 app.include_router(admin_router)
 app.include_router(chat_router)
 app.include_router(uploads_router)
+app.include_router(payments_router)
+app.include_router(location_router)
 
 # ----------------------------------------------------
 # PYDANTIC DATA SCHEMAS

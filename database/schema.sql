@@ -12,7 +12,14 @@ DROP TABLE IF EXISTS review_reports CASCADE;
 DROP TABLE IF EXISTS review_media CASCADE;
 DROP TABLE IF EXISTS reviews CASCADE;
 DROP TABLE IF EXISTS notifications CASCADE;
+DROP TABLE IF EXISTS customer_addresses CASCADE;
+DROP TABLE IF EXISTS refunds CASCADE;
+DROP TABLE IF EXISTS seller_transfers CASCADE;
+DROP TABLE IF EXISTS seller_linked_accounts CASCADE;
+DROP TABLE IF EXISTS sub_orders CASCADE;
 DROP TABLE IF EXISTS payments CASCADE;
+DROP TABLE IF EXISTS webhook_events CASCADE;
+DROP TABLE IF EXISTS platform_settings CASCADE;
 DROP TABLE IF EXISTS delivery_requests CASCADE;
 DROP TABLE IF EXISTS order_items CASCADE;
 DROP TABLE IF EXISTS orders CASCADE;
@@ -349,13 +356,121 @@ CREATE TABLE messages (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 18. PERFORMANCE INDEXES FOR SEARCH & LOCATION
+-- 18. PAYMENTS TABLE (Razorpay Payment Gateway Integration)
+CREATE TABLE IF NOT EXISTS payments (
+    id SERIAL PRIMARY KEY,
+    order_id INT REFERENCES orders(id) ON DELETE CASCADE,
+    customer_id INT REFERENCES users(id) ON DELETE CASCADE,
+    razorpay_order_id VARCHAR(100) UNIQUE NOT NULL,
+    razorpay_payment_id VARCHAR(100),
+    amount DECIMAL(10, 2) NOT NULL,
+    currency VARCHAR(10) DEFAULT 'INR',
+    payment_method VARCHAR(50), -- upi, card, netbanking, wallet
+    status VARCHAR(30) DEFAULT 'created', -- created, authorized, captured, failed, refunded, partially_refunded
+    failure_reason TEXT,
+    captured_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 19. SUB-ORDERS TABLE (Multi-Seller Allocation Model)
+CREATE TABLE IF NOT EXISTS sub_orders (
+    id SERIAL PRIMARY KEY,
+    parent_order_id INT REFERENCES orders(id) ON DELETE CASCADE,
+    seller_id INT REFERENCES users(id) ON DELETE CASCADE,
+    gross_amount DECIMAL(10, 2) NOT NULL,
+    platform_fee DECIMAL(10, 2) DEFAULT 0.00,
+    net_seller_amount DECIMAL(10, 2) NOT NULL,
+    payout_status VARCHAR(30) DEFAULT 'pending', -- pending, created, processed, settled, failed, reversed
+    transfer_id VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 20. SELLER LINKED ACCOUNTS TABLE (Razorpay Route)
+CREATE TABLE IF NOT EXISTS seller_linked_accounts (
+    id SERIAL PRIMARY KEY,
+    seller_id INT UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    razorpay_linked_account_id VARCHAR(100) UNIQUE,
+    onboarding_status VARCHAR(30) DEFAULT 'pending',
+    kyc_status VARCHAR(30) DEFAULT 'pending',
+    payout_enabled BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 21. SELLER TRANSFERS TABLE (Route Marketplace Payout Ledger)
+CREATE TABLE IF NOT EXISTS seller_transfers (
+    id SERIAL PRIMARY KEY,
+    seller_id INT REFERENCES users(id) ON DELETE CASCADE,
+    order_id INT REFERENCES orders(id) ON DELETE CASCADE,
+    payment_id INT REFERENCES payments(id) ON DELETE CASCADE,
+    razorpay_transfer_id VARCHAR(100) UNIQUE NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    currency VARCHAR(10) DEFAULT 'INR',
+    status VARCHAR(30) DEFAULT 'created', -- pending, created, processed, settled, failed, reversed
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    settled_at TIMESTAMP,
+    reversed_at TIMESTAMP
+);
+
+-- 22. REFUNDS TABLE (Customer Refund & Route Reversals)
+CREATE TABLE IF NOT EXISTS refunds (
+    id SERIAL PRIMARY KEY,
+    order_id INT REFERENCES orders(id) ON DELETE CASCADE,
+    payment_id INT REFERENCES payments(id) ON DELETE CASCADE,
+    customer_id INT REFERENCES users(id) ON DELETE CASCADE,
+    amount DECIMAL(10, 2) NOT NULL,
+    reason TEXT,
+    status VARCHAR(30) DEFAULT 'pending', -- pending, processed, failed, partially_refunded, fully_refunded
+    razorpay_refund_id VARCHAR(100) UNIQUE,
+    initiated_by VARCHAR(50) DEFAULT 'customer',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    processed_at TIMESTAMP,
+    failure_reason TEXT
+);
+
+-- 23. WEBHOOK EVENTS TABLE (100% Idempotent Event Log)
+CREATE TABLE IF NOT EXISTS webhook_events (
+    event_id VARCHAR(100) PRIMARY KEY,
+    event_type VARCHAR(100) NOT NULL,
+    processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 24. PLATFORM SETTINGS TABLE (Configurable Platform Fee Rules)
+CREATE TABLE IF NOT EXISTS platform_settings (
+    setting_key VARCHAR(100) PRIMARY KEY,
+    setting_value VARCHAR(255) NOT NULL
+);
+
+-- 25. CUSTOMER SAVED ADDRESSES TABLE (Multiple Addresses: Home, Work, Other)
+CREATE TABLE IF NOT EXISTS customer_addresses (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    address_title VARCHAR(50) DEFAULT 'Home', -- Home, Work, Other
+    full_address TEXT NOT NULL,
+    house VARCHAR(100),
+    street VARCHAR(150),
+    locality VARCHAR(150),
+    city VARCHAR(100) NOT NULL,
+    state VARCHAR(100) NOT NULL,
+    pincode VARCHAR(10) NOT NULL,
+    latitude DECIMAL(9, 6) NOT NULL,
+    longitude DECIMAL(9, 6) NOT NULL,
+    is_default BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 26. PERFORMANCE INDEXES FOR SEARCH & LOCATION
 CREATE INDEX IF NOT EXISTS idx_users_pincode ON users(pincode);
 CREATE INDEX IF NOT EXISTS idx_user_locations_pincode ON user_locations(pincode);
 CREATE INDEX IF NOT EXISTS idx_sellers_pincode ON sellers(pincode);
+CREATE INDEX IF NOT EXISTS idx_sellers_coords ON sellers(latitude, longitude);
 CREATE INDEX IF NOT EXISTS idx_products_seller ON products(seller_id);
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
 CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders(customer_id);
 CREATE INDEX IF NOT EXISTS idx_orders_seller ON orders(seller_id);
 CREATE INDEX IF NOT EXISTS idx_delivery_partner ON delivery_requests(delivery_partner_id);
+CREATE INDEX IF NOT EXISTS idx_payments_order ON payments(order_id);
+CREATE INDEX IF NOT EXISTS idx_payments_razorpay ON payments(razorpay_order_id);
+CREATE INDEX IF NOT EXISTS idx_customer_addresses_user ON customer_addresses(user_id);
 

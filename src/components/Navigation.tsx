@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { SellerNavigation } from './SellerNavigation';
 import { DeliveryNavigation } from './DeliveryNavigation';
+import { LocationPickerModal } from './LocationPickerModal';
 import { Home, Grid, Search, Heart, User, ShoppingBag, MapPin, UserCheck, Shield } from 'lucide-react';
 import { Screen } from '../types';
 
 export const Navigation: React.FC = () => {
   const { activeRole, activeScreen, setActiveScreen, cart, currentLocation, user, setShowAccountSwitcher } = useApp();
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState<boolean>(false);
 
   // Delegate Seller & Delivery Navigation
   if (activeRole === 'seller') return <SellerNavigation />;
@@ -25,6 +27,11 @@ export const Navigation: React.FC = () => {
 
   return (
     <>
+      <LocationPickerModal
+        isOpen={isLocationModalOpen}
+        onClose={() => setIsLocationModalOpen(false)}
+      />
+
       {/* DESKTOP CUSTOMER HEADER */}
       <header className="bg-slate-900 border-b border-slate-800 text-white sticky top-0 z-40 shadow-xl font-sans hidden md:block">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -44,11 +51,11 @@ export const Navigation: React.FC = () => {
 
             {/* Location Badge */}
             <div
-              onClick={() => setActiveScreen('location')}
+              onClick={() => setIsLocationModalOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 text-xs text-slate-300 cursor-pointer transition-colors"
             >
               <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span className="truncate max-w-[180px] font-medium">{currentLocation}</span>
+              <span className="truncate max-w-[180px] font-medium">{currentLocation || 'Deliver to Location'}</span>
             </div>
           </div>
 
@@ -117,7 +124,7 @@ export const Navigation: React.FC = () => {
 
           {/* Location Badge on Mobile Header */}
           <div
-            onClick={() => setActiveScreen('location')}
+            onClick={() => setIsLocationModalOpen(true)}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-800 text-xs text-slate-200 border border-slate-700 cursor-pointer active:scale-95 transition-transform"
           >
             <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />

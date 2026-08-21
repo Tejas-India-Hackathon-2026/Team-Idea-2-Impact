@@ -32,6 +32,30 @@ def get_db_connection():
         conn.row_factory = sqlite3.Row
         return conn
 
+from contextlib import contextmanager
+
+@contextmanager
+def get_db_cursor(commit=False):
+    """Context manager returning a database cursor that auto-converts query placeholders and auto-commits."""
+    conn = get_db_connection()
+    if USE_POSTGRES:
+        from psycopg2.extras import RealDictCursor
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+    else:
+        cursor = conn.cursor()
+    
+    try:
+        yield cursor
+        if commit:
+            conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        cursor.close()
+        conn.close()
+
+
 def init_db():
     """Initializes the database schema and sample seed data."""
     conn = get_db_connection()
