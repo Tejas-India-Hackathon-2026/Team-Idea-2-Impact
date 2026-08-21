@@ -96,6 +96,42 @@ button, input, select, textarea {
   font-size: inherit;
 }
 
+/* Typography Hierarchy Helper Classes */
+.heading-hero {
+  font-size: clamp(26px, 4vw, 36px);
+  line-height: 1.25;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.heading-section {
+  font-size: clamp(19px, 2.5vw, 24px);
+  line-height: 1.3;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.heading-card {
+  font-size: clamp(15px, 2vw, 18px);
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+.text-body-main {
+  font-size: clamp(13px, 1.5vw, 15px);
+  line-height: 1.5;
+}
+
+.text-caption {
+  font-size: clamp(11px, 1.2vw, 13px);
+  line-height: 1.4;
+}
+
+.btn-text {
+  font-size: clamp(13px, 1.4vw, 15px);
+  font-weight: 700;
+}
+
 /* App Viewport Layout */
 .app-viewport-wrapper {
   min-height: 100vh;
@@ -120,7 +156,7 @@ button, input, select, textarea {
   border-bottom: 1px solid #1e293b;
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 40;
   box-shadow: var(--shadow-sm);
   width: 100%;
 }
@@ -129,21 +165,21 @@ button, input, select, textarea {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 64px;
+  height: 60px;
 }
 
 .logo {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 800;
   color: #ffffff;
 }
 
 .logo-icon {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   background-color: var(--primary-green);
   color: #ffffff;
   border-radius: var(--radius-sm);
@@ -160,7 +196,7 @@ button, input, select, textarea {
 .nav-menu {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
   list-style: none;
 }
 
@@ -226,13 +262,13 @@ button, input, select, textarea {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 16px;
+  padding: 8px 16px;
   border-radius: var(--radius-md);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   border: 1px solid transparent;
   transition: all 0.2s ease;
-  min-height: 44px; /* Native 44px Minimum Touch Target */
+  min-height: 40px;
   touch-action: manipulation;
 }
 
@@ -271,8 +307,8 @@ button, input, select, textarea {
 
 .btn-sm {
   padding: 6px 12px;
-  font-size: 13px;
-  min-height: 40px;
+  font-size: 12px;
+  min-height: 36px;
 }
 
 /* Badges */
@@ -280,9 +316,9 @@ button, input, select, textarea {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 3px 8px;
+  padding: 2px 7px;
   border-radius: 4px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
 }
 
@@ -301,7 +337,7 @@ button, input, select, textarea {
 /* Main Content Layout */
 .main-content {
   flex: 1;
-  padding: 24px 0;
+  padding: 20px 0;
   width: 100%;
   box-sizing: border-box;
 }
@@ -311,7 +347,7 @@ button, input, select, textarea {
   background-color: #1e293b;
   border: 1px solid #334155;
   border-radius: var(--radius-md);
-  padding: 20px;
+  padding: 16px;
   box-shadow: var(--shadow-sm);
   color: #f8fafc;
   box-sizing: border-box;
@@ -320,7 +356,7 @@ button, input, select, textarea {
 
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 16px;
   width: 100%;
 }
@@ -330,11 +366,11 @@ button, input, select, textarea {
   background-color: #1e293b;
   border: 1px solid #334155;
   border-radius: var(--radius-md);
-  padding: 14px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  text-align: left; /* Left-aligned content */
+  text-align: left;
   box-shadow: var(--shadow-sm);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   color: #f8fafc;
@@ -347,32 +383,31 @@ button, input, select, textarea {
   box-shadow: var(--shadow-md);
 }
 
-/* STRICT MEDIUM BALANCED PRODUCT IMAGE SIZE (1:1 Aspect Ratio) */
+/* MEDIUM BALANCED PRODUCT IMAGE SIZE (1:1 Aspect Ratio) */
 .product-img, .product-card-img {
   width: 100%;
   aspect-ratio: 1 / 1;
-  max-height: 180px;
+  max-height: 160px;
   object-fit: contain;
   background: #0f172a;
   border: 1px solid #334155;
   border-radius: var(--radius-sm);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .product-card-body {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   text-align: left;
 }
 
-/* Primary Text (Titles/Product Names): 14px to 16px, 600 Semi-Bold, Ellipsis Truncation */
 .product-card-title, .product-title {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: #f8fafc;
-  margin-bottom: 4px;
-  line-height: 1.35;
+  margin-bottom: 2px;
+  line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -380,16 +415,14 @@ button, input, select, textarea {
   -webkit-box-orient: vertical;
 }
 
-/* Secondary Text (Descriptions/Categories): 12px to 13px, Muted Gray */
 .product-card-seller, .product-seller {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 400;
   color: #94a3b8;
 }
 
-/* Price Text: Bold 700, 16px - 18px, LocalKart Emerald Color */
 .product-card-price, .price {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
   color: #4ade80;
 }
@@ -412,19 +445,21 @@ button, input, select, textarea {
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 14px;
+  gap: 5px;
+  margin-bottom: 12px;
 }
 
 .form-label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: #f8fafc;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .form-input, .form-select, .form-textarea {
   width: 100%;
-  padding: 10px;
+  padding: 9px 12px;
   border: 1px solid #334155;
   border-radius: var(--radius-sm);
   background-color: #0f172a;
@@ -438,7 +473,7 @@ button, input, select, textarea {
   border-color: var(--primary-green);
 }
 
-/* Category Pills & Horizontal Scroll Lists (Scrollbar Hidden, Native Touch Scroll) */
+/* Category Pills & Horizontal Scroll Lists */
 .category-pills-container, .horizontal-scroll-list {
   display: flex;
   gap: 10px;
@@ -446,13 +481,13 @@ button, input, select, textarea {
   overscroll-behavior-x: contain;
   padding-bottom: 8px;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .category-pills-container::-webkit-scrollbar,
 .horizontal-scroll-list::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none;
 }
 
 /* Toast Notification */
@@ -464,7 +499,7 @@ button, input, select, textarea {
   background-color: #0f172a;
   border: 1px solid #16a34a;
   color: #ffffff;
-  padding: 12px 20px;
+  padding: 10px 18px;
   border-radius: var(--radius-md);
   font-size: 13px;
   font-weight: 700;
@@ -481,7 +516,7 @@ button, input, select, textarea {
   inset: 0;
   background-color: rgba(15, 23, 42, 0.85);
   backdrop-filter: blur(4px);
-  z-index: 1000;
+  z-index: 50;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -493,9 +528,9 @@ button, input, select, textarea {
   background-color: #1e293b;
   border: 1px solid #334155;
   border-radius: var(--radius-lg);
-  max-width: min(500px, calc(100vw - 24px));
+  max-width: min(480px, calc(100vw - 24px));
   width: 100%;
-  padding: 24px;
+  padding: 20px;
   box-shadow: var(--shadow-lg);
   color: #f8fafc;
   box-sizing: border-box;
@@ -507,7 +542,7 @@ button, input, select, textarea {
 .site-footer {
   background-color: #0f172a;
   border-top: 1px solid #1e293b;
-  padding: 24px 0;
+  padding: 20px 0;
   font-size: 12px;
   color: #94a3b8;
   margin-top: auto;
@@ -534,11 +569,11 @@ button, input, select, textarea {
     flex-direction: column;
     align-items: flex-start;
     height: auto;
-    padding: 12px 0;
-    gap: 10px;
+    padding: 10px 0;
+    gap: 8px;
   }
   .nav-menu {
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
   }
   .product-grid {
@@ -549,20 +584,20 @@ button, input, select, textarea {
     padding: 14px;
   }
   .modal-content {
-    padding: 18px;
+    padding: 16px;
   }
 }
 
 @media (max-width: 480px) {
   .product-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    gap: 8px;
   }
   .product-card {
-    padding: 10px;
+    padding: 8px;
   }
   .product-img, .product-card-img {
-    max-height: 140px;
+    max-height: 130px;
   }
 }
 

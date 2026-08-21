@@ -1,111 +1,233 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { ArrowLeft, Truck, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Truck, ShieldCheck, CheckCircle2, Lock, Eye, EyeOff, Check, Mail } from 'lucide-react';
 
 export const DeliveryRegisterModal: React.FC = () => {
-  const { registerDeliveryAccount, setActiveScreen, user } = useApp();
+  const { signupWithEmail, registerDeliveryAccount, setActiveScreen, user } = useApp();
 
   const [fullName, setFullName] = useState<string>(user?.name || '');
-  const [mobileNumber, setMobileNumber] = useState<string>(user?.phone || '');
-  const [email, setEmail] = useState<string>('');
-  const [address, setAddress] = useState<string>('');
-  const [pincode, setPincode] = useState<string>('');
-  const [city, setCity] = useState<string>('');
-  const [state, setState] = useState<string>('');
-  const [serviceLocation, setServiceLocation] = useState<string>('');
+  const [email, setEmail] = useState<string>(user?.email || '');
+  const [password, setPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
+
   const [vehicleType, setVehicleType] = useState<string>('Two-Wheeler / Scooter');
   const [licenseNo, setLicenseNo] = useState<string>('');
-  const [paymentInfo, setPaymentInfo] = useState<string>('');
+  const [pincode, setPincode] = useState<string>('560034');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // Live Password Validation Checklist Criteria
+  const pwdReqs = {
+    length: password.length >= 8,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    number: /[0-9]/.test(password),
+    special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+  };
+
+  const isPasswordValid = Object.values(pwdReqs).every(Boolean);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName.trim() || !mobileNumber.trim()) {
-      setErrorMsg('Please enter your full name and mobile number');
+    setErrorMsg(null);
+
+    if (!fullName.trim()) {
+      setErrorMsg('Please enter your full name.');
       return;
     }
-    setErrorMsg(null);
+
+    if (!email.includes('@')) {
+      setErrorMsg('Please enter a valid email address.');
+      return;
+    }
+
+    if (!user) {
+      if (!isPasswordValid) {
+        setErrorMsg('Password does not meet all 5 security requirements.');
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        setErrorMsg('Passwords do not match.');
+        return;
+      }
+    }
+
+    setIsLoading(true);
+    if (!user) {
+      const res = await signupWithEmail(fullName.trim(), email.trim(), password, 'delivery');
+      if (!res.success) {
+        setIsLoading(false);
+        setErrorMsg(res.message || 'Failed to create delivery partner account.');
+        return;
+      }
+    }
+
     await registerDeliveryAccount(fullName, vehicleType, licenseNo, pincode);
+    setIsLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white flex flex-col justify-between p-6 sm:p-10 font-sans relative overflow-y-auto">
-      <div className="relative z-10 max-w-lg mx-auto w-full my-6">
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between p-4 sm:p-6 font-sans relative overflow-y-auto box-border select-none">
+      <div className="relative z-10 max-w-md mx-auto w-full my-4">
         <button
-          onClick={() => setActiveScreen('role_select')}
-          className="p-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white mb-6 flex items-center gap-2 text-sm font-medium border border-slate-700 transition-colors"
+          onClick={() => setActiveScreen('login_mobile')}
+          className="px-3.5 py-2 rounded-xl bg-slate-900 text-slate-300 hover:text-white mb-4 flex items-center gap-2 text-xs sm:text-sm font-medium border border-slate-800 transition-all shadow-md"
         >
-          <ArrowLeft className="w-4 h-4" /> Back
+          <ArrowLeft className="w-4 h-4 text-cyan-400" /> Back
         </button>
 
-        <div className="mb-6 flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
-            <Truck className="w-6 h-6" />
+        <div className="mb-4 flex items-center gap-3 bg-slate-900/90 border border-cyan-500/30 rounded-2xl p-4 shadow-xl backdrop-blur-md">
+          <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 shrink-0">
+            <Truck className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-white">Join LocalKart Delivery</h2>
-            <p className="text-xs text-blue-400 font-semibold mt-0.5">Deliver locally. Earn flexibly.</p>
+            <h2 className="text-xl font-bold tracking-tight text-white">Join LocalKart Delivery</h2>
+            <p className="text-xs text-slate-300 font-normal">Deliver orders locally in your pincode & earn flexibly.</p>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                Full Name
-              </label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Full Name"
-                className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:border-blue-500 focus:outline-none text-sm"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                Mobile Number
-              </label>
-              <input
-                type="tel"
-                value={mobileNumber}
-                onChange={(e) => setMobileNumber(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:border-blue-500 focus:outline-none text-sm"
-                required
-              />
-            </div>
-          </div>
-
+        <form onSubmit={handleSubmit} className="bg-slate-900/95 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-2xl space-y-3.5">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-              Email Address
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email Address"
-              className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:border-blue-500 focus:outline-none text-sm"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-              Residential Address
+            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+              Full Name
             </label>
             <input
               type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:border-blue-500 focus:outline-none text-sm"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Enter full name"
+              className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:border-cyan-400 focus:outline-none"
+              required
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div>
+            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+              Email Address
+            </label>
+            <div className="flex items-center h-10 bg-slate-950 border border-slate-800 rounded-xl px-3 focus-within:border-cyan-400">
+              <Mail className="w-4 h-4 text-cyan-400 mr-2 shrink-0" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@example.com"
+                className="w-full h-full bg-transparent text-white placeholder-slate-500 text-xs focus:outline-none"
+                required
+              />
+            </div>
+          </div>
+
+          {!user && (
+            <>
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                  Password
+                </label>
+                <div className="flex items-center h-10 bg-slate-950 border border-slate-800 rounded-xl px-3 focus-within:border-cyan-400">
+                  <Lock className="w-4 h-4 text-cyan-400 mr-2 shrink-0" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter password"
+                    className="w-full h-full bg-transparent text-white placeholder-slate-500 text-xs focus:outline-none"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="text-slate-400 hover:text-cyan-400 ml-2 focus:outline-none shrink-0"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                  Confirm Password
+                </label>
+                <div className="flex items-center h-10 bg-slate-950 border border-slate-800 rounded-xl px-3 focus-within:border-cyan-400">
+                  <Lock className="w-4 h-4 text-cyan-400 mr-2 shrink-0" />
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter password"
+                    className="w-full h-full bg-transparent text-white placeholder-slate-500 text-xs focus:outline-none"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="text-slate-400 hover:text-cyan-400 ml-2 focus:outline-none shrink-0"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-2.5 bg-slate-950 border border-slate-800 rounded-xl space-y-1 text-xs text-slate-300">
+                <p className="font-semibold text-slate-400 text-[10px] uppercase tracking-wider mb-0.5">
+                  Password Requirements:
+                </p>
+                <div className="flex items-center gap-1.5 text-[11px]">
+                  <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${pwdReqs.length ? 'bg-cyan-500/20 text-cyan-400' : 'bg-slate-800 text-slate-500'}`}>
+                    {pwdReqs.length ? <Check className="w-2.5 h-2.5 stroke-[3]" /> : '•'}
+                  </span>
+                  <span className={pwdReqs.length ? 'text-cyan-400 font-medium' : 'text-slate-400'}>At least 8 characters</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px]">
+                  <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${pwdReqs.uppercase ? 'bg-cyan-500/20 text-cyan-400' : 'bg-slate-800 text-slate-500'}`}>
+                    {pwdReqs.uppercase ? <Check className="w-2.5 h-2.5 stroke-[3]" /> : '•'}
+                  </span>
+                  <span className={pwdReqs.uppercase ? 'text-cyan-400 font-medium' : 'text-slate-400'}>One uppercase letter (A-Z)</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px]">
+                  <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${pwdReqs.lowercase ? 'bg-cyan-500/20 text-cyan-400' : 'bg-slate-800 text-slate-500'}`}>
+                    {pwdReqs.lowercase ? <Check className="w-2.5 h-2.5 stroke-[3]" /> : '•'}
+                  </span>
+                  <span className={pwdReqs.lowercase ? 'text-cyan-400 font-medium' : 'text-slate-400'}>One lowercase letter (a-z)</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px]">
+                  <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${pwdReqs.number ? 'bg-cyan-500/20 text-cyan-400' : 'bg-slate-800 text-slate-500'}`}>
+                    {pwdReqs.number ? <Check className="w-2.5 h-2.5 stroke-[3]" /> : '•'}
+                  </span>
+                  <span className={pwdReqs.number ? 'text-cyan-400 font-medium' : 'text-slate-400'}>One number (0-9)</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px]">
+                  <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] ${pwdReqs.special ? 'bg-cyan-500/20 text-cyan-400' : 'bg-slate-800 text-slate-500'}`}>
+                    {pwdReqs.special ? <Check className="w-2.5 h-2.5 stroke-[3]" /> : '•'}
+                  </span>
+                  <span className={pwdReqs.special ? 'text-cyan-400 font-medium' : 'text-slate-400'}>One special character (!@#$%^&*)</span>
+                </div>
+              </div>
+            </>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[10px] font-semibold text-slate-300 uppercase tracking-wider mb-1">
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                Vehicle Type
+              </label>
+              <select
+                value={vehicleType}
+                onChange={(e) => setVehicleType(e.target.value)}
+                className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:border-cyan-400 focus:outline-none"
+              >
+                <option value="Two-Wheeler / Scooter">Scooter / Bike</option>
+                <option value="Bicycle">Bicycle</option>
+                <option value="E-Rickshaw">E-Rickshaw</option>
+                <option value="On Foot">On Foot / Walking</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
                 PIN Code
               </label>
               <input
@@ -113,105 +235,46 @@ export const DeliveryRegisterModal: React.FC = () => {
                 value={pincode}
                 onChange={(e) => setPincode(e.target.value)}
                 maxLength={6}
-                className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                City
-              </label>
-              <input
-                type="text"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs"
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                State
-              </label>
-              <input
-                type="text"
-                value={state}
-                onChange={(e) => setState(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-              Service Location / Operating Area
-            </label>
-            <input
-              type="text"
-              value={serviceLocation}
-              onChange={(e) => setServiceLocation(e.target.value)}
-              placeholder="Localities where you want to deliver"
-              className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:border-blue-500 focus:outline-none text-sm"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                Vehicle Type
-              </label>
-              <select
-                value={vehicleType}
-                onChange={(e) => setVehicleType(e.target.value)}
-                className="w-full px-3 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:border-blue-500 focus:outline-none text-sm"
-              >
-                <option value="Two-Wheeler / Scooter">Scooter / Bike</option>
-                <option value="Bicycle">Bicycle</option>
-                <option value="E-Rickshaw">E-Rickshaw</option>
-                <option value="On Foot">On Foot / Local Walk</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                Driving License / Govt ID
-              </label>
-              <input
-                type="text"
-                value={licenseNo}
-                onChange={(e) => setLicenseNo(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs"
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:border-cyan-400 focus:outline-none"
                 required
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-              Payment / Bank Info (UPI / Bank Account)
+            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+              Driving License / Govt ID Number
             </label>
             <input
               type="text"
-              value={paymentInfo}
-              onChange={(e) => setPaymentInfo(e.target.value)}
-              className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs"
+              value={licenseNo}
+              onChange={(e) => setLicenseNo(e.target.value)}
+              placeholder="e.g. DL-1420110012345"
+              className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:border-cyan-400 focus:outline-none"
+              required
             />
           </div>
 
-          {errorMsg && <p className="text-rose-400 text-xs font-medium">{errorMsg}</p>}
+          {errorMsg && (
+            <p className="text-rose-400 text-xs font-normal bg-rose-500/10 border border-rose-500/20 rounded-xl py-1.5 px-3">
+              {errorMsg}
+            </p>
+          )}
 
-          <div className="bg-blue-950/30 border border-blue-500/20 rounded-xl p-3 flex items-start gap-2.5">
-            <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-            <p className="text-xs text-blue-200/80 leading-relaxed">
-              Submitting registration opens the Delivery Partner Dashboard immediately.
+          <div className="bg-cyan-950/30 border border-cyan-500/20 rounded-xl p-3 flex items-start gap-2">
+            <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+            <p className="text-xs text-cyan-200/90 leading-relaxed">
+              Completing registration gives immediate access to the Delivery Partner Portal.
             </p>
           </div>
 
           <button
             type="submit"
-            className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-base shadow-lg shadow-blue-900/40 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+            disabled={isLoading}
+            className="w-full py-3 px-6 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-bold text-xs sm:text-sm shadow-lg shadow-cyan-950/50 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            <CheckCircle2 className="w-5 h-5" />
-            <span>Complete Partner Registration</span>
+            <CheckCircle2 className="w-4 h-4" />
+            <span>{isLoading ? 'Registering...' : 'Complete Delivery Registration'}</span>
           </button>
         </form>
       </div>
