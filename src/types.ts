@@ -9,6 +9,7 @@ export type Screen =
   | 'seller_registration'
   | 'delivery_registration'
   | 'continue_as'
+  | 'permissions'
   | 'splash' 
   | 'location' 
   | 'onboarding' 

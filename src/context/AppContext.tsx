@@ -610,7 +610,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setUser(updatedUser);
       localStorage.setItem('localkart_user', JSON.stringify(updatedUser));
       setActiveRoleState('customer');
-      setActiveScreenState('home');
+      setActiveScreenState('permissions');
       showNotification(`Account created! Welcome ${name}`);
       return true;
     } catch (e) {
@@ -630,7 +630,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setUser(updatedUser);
       localStorage.setItem('localkart_user', JSON.stringify(updatedUser));
       setActiveRoleState('customer');
-      setActiveScreenState('home');
+      setActiveScreenState('permissions');
       showNotification(`Welcome ${name}!`);
       return true;
     }

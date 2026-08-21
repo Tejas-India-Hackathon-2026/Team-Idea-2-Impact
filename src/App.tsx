@@ -29,10 +29,14 @@ import { AdminDashboardView } from './components/AdminDashboardView';
 import { Navigation } from './components/Navigation';
 import { DevViewportPreview } from './components/DevViewportPreview';
 
+import { SplashModal } from './components/SplashModal';
+import { PermissionsModal } from './components/PermissionsModal';
+
 const MainLayout: React.FC = () => {
   const { activeRole, activeScreen, isAuthenticated, user, notification } = useApp();
 
   // Full-screen Auth & Setup Flow
+  if (activeScreen === 'splash') return <SplashModal />;
   if (activeScreen === 'auth_welcome') return <AuthWelcomeModal />;
   if (activeScreen === 'login_mobile') return <LoginModal />;
   if (activeScreen === 'verify_otp') return <OTPVerifyModal />;
@@ -40,6 +44,7 @@ const MainLayout: React.FC = () => {
   if (activeScreen === 'customer_registration') return <CustomerRegisterModal />;
   if (activeScreen === 'seller_registration') return <SellerRegisterModal />;
   if (activeScreen === 'delivery_registration') return <DeliveryRegisterModal />;
+  if (activeScreen === 'permissions') return <PermissionsModal />;
   if (activeScreen === 'continue_as') return <ContinueAsModal />;
 
   // Authentication Security Guard: Unauthenticated users MUST NOT see any platform
