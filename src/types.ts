@@ -106,6 +106,23 @@ export interface Seller {
   productsCount: number;
   phone: string;
   followersCount: number;
+  videoIntroUrl?: string;
+  qualityScore?: number;
+}
+
+export interface VideoStory {
+  id: string;
+  title: string;
+  videoUrl: string;
+  thumbnail: string;
+  duration: string;
+  sellerId: string;
+  sellerName: string;
+  sellerAvatar: string;
+  productId?: string;
+  productName?: string;
+  viewsCount: number;
+  likesCount: number;
 }
 
 export interface Review {
