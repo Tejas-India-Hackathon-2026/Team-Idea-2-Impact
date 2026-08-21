@@ -416,22 +416,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setRequestedRole(role);
     setFirebaseConfirmationResult(null);
 
-    // 1. Try Firebase Phone Authentication first
-    try {
-      const confirmationResult = await sendFirebasePhoneOtp(phone);
-      setFirebaseConfirmationResult(confirmationResult);
-      showNotification(`Firebase OTP sent via SMS to ${phone}`);
-      setActiveScreenState('verify_otp');
-      return true;
-    } catch (fbErr: any) {
-      const code = fbErr?.code || '';
-      console.error('[Firebase Phone Auth Error Code]:', code, fbErr);
-      const friendlyMsg = getFirebaseErrorMessage(code);
-      console.warn('[Firebase Notice]: Attempting backend fallback...', friendlyMsg);
-      setFirebaseConfirmationResult(null);
+    const hasCustomFirebaseKey = Boolean((import.meta as any).env?.VITE_FIREBASE_API_KEY);
+
+    // 1. Try Firebase Phone Authentication if configured
+    if (hasCustomFirebaseKey) {
+      try {
+        const confirmationResult = await sendFirebasePhoneOtp(phone);
+        setFirebaseConfirmationResult(confirmationResult);
+        showNotification(`Firebase OTP sent via SMS to ${phone}`);
+        setActiveScreenState('verify_otp');
+        return true;
+      } catch (fbErr: any) {
+        const code = fbErr?.code || '';
+        console.error('[Firebase Phone Auth Error Code]:', code, fbErr);
+        setFirebaseConfirmationResult(null);
+      }
     }
 
-    // 2. Fallback to LocalKart REST API endpoint
+    // 2. Direct FastAPI Backend OTP Generator & Dispatcher
     try {
       const res = await fetch(`${API_BASE}/auth/send-otp`, {
         method: 'POST',
