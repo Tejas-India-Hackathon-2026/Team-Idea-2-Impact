@@ -76,6 +76,7 @@ interface AppContextType {
   sendOtp: (phone: string, role?: Role, channel?: string) => Promise<boolean>;
   verifyOtp: (code: string) => Promise<boolean>;
   switchUserRole: (targetRole: Role) => void;
+  continueAsCustomer: () => void;
   registerCustomer: (name: string, location: string) => void;
   registerCustomerAccount: (name: string, email?: string, pincode?: string, city?: string) => Promise<boolean>;
   registerSellerAccount: (storeName: string, category: string, pincode: string, description: string, sellerType?: string) => Promise<boolean>;
@@ -511,6 +512,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const startSignUpFlow = () => {
     setAuthMode('signup');
     setActiveScreenState('login_mobile');
+  };
+
+  const continueAsCustomer = () => {
+    const guestUser: UserProfile = {
+      id: 'guest_' + Date.now(),
+      name: 'Customer',
+      email: '',
+      phone: '',
+      roles: ['customer'],
+      activeRole: 'customer',
+      pincode: locationData.pincode || '560034',
+      city: locationData.city || 'Bengaluru',
+      location: locationData
+    };
+    setIsAuthenticated(true);
+    setUser(guestUser);
+    setActiveRoleState('customer');
+    setActiveScreenState('permissions');
+    showNotification('Welcome to LocalKart!');
   };
 
   const selectRoleForSignUp = (role: Role) => {
@@ -1084,6 +1104,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       forgotPassword,
       resetPassword,
       switchUserRole,
+      continueAsCustomer,
       registerCustomer,
       registerCustomerAccount,
       registerSellerAccount,
