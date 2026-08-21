@@ -24,6 +24,11 @@ interface AppContextType {
   viewportMode: ViewportMode;
   setViewportMode: (mode: ViewportMode) => void;
   
+  // Language System (i18n)
+  language: 'en' | 'hi';
+  setLanguage: (lang: 'en' | 'hi') => void;
+  t: (key: string) => string;
+
   // Location System
   currentLocation: string;
   setCurrentLocation: (loc: string) => void;
@@ -150,6 +155,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [activeScreen, setActiveScreenState] = useState<Screen>(computeInitialScreen);
   const [viewportMode, setViewportMode] = useState<ViewportMode>('desktop');
+
+  // Language System (i18n)
+  const initialLang = (localStorage.getItem('localkart_lang') as 'en' | 'hi') || 'en';
+  const [language, setLanguageState] = useState<'en' | 'hi'>(initialLang);
+
+  const setLanguage = (lang: 'en' | 'hi') => {
+    setLanguageState(lang);
+    localStorage.setItem('localkart_lang', lang);
+  };
+
+  const translations: Record<string, { en: string; hi: string }> = {
+    deliver_to: { en: 'Deliver to Location', hi: 'डिलीवरी स्थान' },
+    select_location: { en: 'Select Location', hi: 'स्थान चुनें' },
+    search_placeholder: { en: 'Search local products, shops, handmade items...', hi: 'स्थानीय उत्पाद, दुकानें, हस्तशिल्प खोजें...' },
+    search_button: { en: 'Search', hi: 'खोजें' },
+    categories_title: { en: 'Explore Categories', hi: 'श्रेणियां देखें' },
+    see_all: { en: 'See All →', hi: 'सभी देखें →' },
+    nearby_sellers: { en: 'Nearby Local Sellers & Stores', hi: 'आस-पास के स्थानीय विक्रेता और दुकानें' },
+    verified_badge: { en: 'Verified', hi: 'सत्यापित' },
+    popular_products: { en: 'Popular Products', hi: 'लोकप्रिय उत्पाद' },
+    recommended_products: { en: 'Recommended for You', hi: 'आपके लिए अनुशंसित' },
+    followed_sellers: { en: 'Followed Shops & Stores', hi: 'पसंद की दुकानें' },
+    no_followed_sellers: { en: 'You are not following any sellers yet.', hi: 'आप अभी किसी विक्रेता को फ़ॉलो नहीं कर रहे हैं।' },
+    explore_sellers: { en: 'Explore Sellers', hi: 'विक्रेता खोजें' },
+    recently_viewed: { en: 'Recently Viewed', hi: 'हाल ही में देखा गया' },
+    no_recently_viewed: { en: 'No recently viewed products.', hi: 'कोई हाल ही में देखा गया उत्पाद नहीं है।' },
+    home_nav: { en: 'Home', hi: 'होम' },
+    search_nav: { en: 'Search', hi: 'सर्च' },
+    categories_nav: { en: 'Categories', hi: 'श्रेणियां' },
+    wishlist_nav: { en: 'Wishlist', hi: 'विशलिस्ट' },
+    orders_nav: { en: 'Orders', hi: 'ऑर्डर' },
+    profile_nav: { en: 'Profile', hi: 'प्रोफाइल' },
+    view_store: { en: 'View Store', hi: 'दुकान देखें' },
+    follow: { en: 'Follow', hi: 'फ़ॉलो करें' },
+    following: { en: 'Following', hi: 'फ़ॉलो किया' },
+  };
+
+  const t = (key: string): string => {
+    return translations[key]?.[language] || translations[key]?.['en'] || key;
+  };
 
   // Location State
   const [locationData, setLocationData] = useState<LocationData>(initialLocationData);
@@ -1056,6 +1101,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   return (
     <AppContext.Provider value={{
+      language,
+      setLanguage,
+      t,
       activeRole,
       setActiveRole: setActiveRoleState,
       activeScreen,

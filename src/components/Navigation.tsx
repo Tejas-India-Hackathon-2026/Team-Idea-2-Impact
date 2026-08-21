@@ -3,11 +3,23 @@ import { useApp } from '../context/AppContext';
 import { SellerNavigation } from './SellerNavigation';
 import { DeliveryNavigation } from './DeliveryNavigation';
 import { LocationPickerModal } from './LocationPickerModal';
-import { Home, Grid, Search, Heart, User, ShoppingBag, MapPin, UserCheck, Shield } from 'lucide-react';
+import { Home, Search, Heart, User, ShoppingBag, MapPin, UserCheck, Languages } from 'lucide-react';
 import { Screen } from '../types';
 
 export const Navigation: React.FC = () => {
-  const { activeRole, activeScreen, setActiveScreen, cart, currentLocation, user, setShowAccountSwitcher } = useApp();
+  const { 
+    activeRole, 
+    activeScreen, 
+    setActiveScreen, 
+    cart, 
+    currentLocation, 
+    user, 
+    setShowAccountSwitcher,
+    language,
+    setLanguage,
+    t
+  } = useApp();
+
   const [isLocationModalOpen, setIsLocationModalOpen] = useState<boolean>(false);
 
   // Delegate Seller & Delivery Navigation
@@ -16,13 +28,12 @@ export const Navigation: React.FC = () => {
 
   const totalCartItems = cart.reduce((acc, item) => acc + item.quantity, 0);
 
-  const customerNavItems: { id: Screen; label: string }[] = [
-    { id: 'home', label: 'Home' },
-    { id: 'categories', label: 'Categories' },
-    { id: 'search', label: 'Search' },
-    { id: 'wishlist', label: 'Wishlist' },
-    { id: 'orders', label: 'Orders' },
-    { id: 'profile', label: 'Profile' },
+  const customerNavItems: { id: Screen; key: string }[] = [
+    { id: 'home', key: 'home_nav' },
+    { id: 'categories', key: 'categories_nav' },
+    { id: 'wishlist', key: 'wishlist_nav' },
+    { id: 'orders', key: 'orders_nav' },
+    { id: 'profile', key: 'profile_nav' },
   ];
 
   return (
@@ -55,11 +66,11 @@ export const Navigation: React.FC = () => {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 text-xs text-slate-300 cursor-pointer transition-colors"
             >
               <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span className="truncate max-w-[180px] font-medium">{currentLocation || 'Deliver to Location'}</span>
+              <span className="truncate max-w-[180px] font-medium">{currentLocation || t('select_location')}</span>
             </div>
           </div>
 
-          {/* Desktop Navigation Links (Pure Customer Only) */}
+          {/* Desktop Navigation Links */}
           <nav className="flex items-center gap-3 lg:gap-5">
             {customerNavItems.map((item) => (
               <button
@@ -71,13 +82,34 @@ export const Navigation: React.FC = () => {
                     : 'text-slate-300 hover:text-white hover:bg-slate-800'
                 }`}
               >
-                {item.label}
+                {t(item.key)}
               </button>
             ))}
           </nav>
 
-          {/* Actions: Cart, Account Switcher & Profile */}
+          {/* Actions: Language Toggle, Cart, Account Switcher & Profile */}
           <div className="flex items-center gap-2.5">
+            {/* Language Selector: English | हिन्दी */}
+            <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
+              <button
+                onClick={() => setLanguage('en')}
+                className={`px-2 py-0.5 rounded-lg transition-all ${
+                  language === 'en' ? 'bg-emerald-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                English
+              </button>
+              <span className="text-slate-700 px-1 font-normal">|</span>
+              <button
+                onClick={() => setLanguage('hi')}
+                className={`px-2 py-0.5 rounded-lg transition-all ${
+                  language === 'hi' ? 'bg-emerald-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                हिन्दी
+              </button>
+            </div>
+
             {user && user.roles.length > 1 && (
               <button
                 onClick={() => setShowAccountSwitcher(true)}
@@ -112,7 +144,7 @@ export const Navigation: React.FC = () => {
         </div>
       </header>
 
-      {/* MOBILE HEADER (Logo, Location Badge, Cart Header) */}
+      {/* MOBILE HEADER (Logo, Location Badge, Language Toggle, Cart Header) */}
       <header className="md:hidden sticky top-0 z-40 bg-slate-900 border-b border-slate-800 text-white px-3 py-2.5 flex flex-col gap-2 font-sans">
         <div className="flex items-center justify-between">
           <div onClick={() => setActiveScreen('home')} className="flex items-center gap-2 cursor-pointer">
@@ -128,20 +160,19 @@ export const Navigation: React.FC = () => {
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-800 text-xs text-slate-200 border border-slate-700 cursor-pointer active:scale-95 transition-transform"
           >
             <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <span className="truncate max-w-[140px] font-bold">
-              {currentLocation || '📍 Select Location'}
+            <span className="truncate max-w-[120px] font-bold">
+              {currentLocation || '📍 Location'}
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            {user && user.roles.length > 1 && (
-              <button
-                onClick={() => setShowAccountSwitcher(true)}
-                className="p-1.5 rounded-lg bg-slate-800 text-emerald-400 text-xs border border-slate-700"
-              >
-                <UserCheck className="w-4 h-4" />
-              </button>
-            )}
+          <div className="flex items-center gap-1.5">
+            {/* Language Selector on Mobile */}
+            <button
+              onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')}
+              className="px-2 py-1 rounded-lg bg-slate-800 text-emerald-400 text-[11px] font-bold border border-slate-700"
+            >
+              {language === 'en' ? 'हिन्दी' : 'ENG'}
+            </button>
 
             <button
               onClick={() => setActiveScreen('cart')}
@@ -158,7 +189,7 @@ export const Navigation: React.FC = () => {
         </div>
       </header>
 
-      {/* MOBILE CUSTOMER BOTTOM NAVIGATION (Home | Search | Categories | Orders | Profile) */}
+      {/* MOBILE CUSTOMER BOTTOM NAVIGATION (Home | Search | Wishlist | Orders | Profile) */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-800 py-1.5 px-3 flex items-center justify-around font-sans shadow-2xl">
         <button
           onClick={() => setActiveScreen('home')}
@@ -167,7 +198,7 @@ export const Navigation: React.FC = () => {
           }`}
         >
           <Home className="w-5 h-5" />
-          <span>Home</span>
+          <span>{t('home_nav')}</span>
         </button>
 
         <button
@@ -177,17 +208,17 @@ export const Navigation: React.FC = () => {
           }`}
         >
           <Search className="w-5 h-5" />
-          <span>Search</span>
+          <span>{t('search_nav')}</span>
         </button>
 
         <button
-          onClick={() => setActiveScreen('categories')}
+          onClick={() => setActiveScreen('wishlist')}
           className={`flex flex-col items-center justify-center min-h-[44px] px-2 gap-1 text-[11px] font-semibold transition-colors ${
-            activeScreen === 'categories' ? 'text-emerald-400' : 'text-slate-400'
+            activeScreen === 'wishlist' ? 'text-emerald-400' : 'text-slate-400'
           }`}
         >
-          <Grid className="w-5 h-5" />
-          <span>Categories</span>
+          <Heart className="w-5 h-5" />
+          <span>{t('wishlist_nav')}</span>
         </button>
 
         <button
@@ -197,7 +228,7 @@ export const Navigation: React.FC = () => {
           }`}
         >
           <ShoppingBag className="w-5 h-5" />
-          <span>Orders</span>
+          <span>{t('orders_nav')}</span>
         </button>
 
         <button
@@ -207,7 +238,7 @@ export const Navigation: React.FC = () => {
           }`}
         >
           <User className="w-5 h-5" />
-          <span>Profile</span>
+          <span>{t('profile_nav')}</span>
         </button>
       </div>
     </>
