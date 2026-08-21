@@ -41,14 +41,29 @@ app = FastAPI(
     version="3.0.0"
 )
 
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3001")
+allowed_origins = [
+    "http://localhost:3001",
+    "http://localhost:5173",
+    "http://127.0.0.1:3001",
+    "http://127.0.0.1:5173",
+    FRONTEND_URL,
+    "https://localkart-frontend.onrender.com"
+]
+
 # Enable CORS for frontend clients
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=allowed_origins if os.getenv("ENVIRONMENT") == "production" else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/health")
+def health_endpoint():
+    """Production health check endpoint for Render monitoring"""
+    return {"status": "ok", "environment": os.getenv("ENVIRONMENT", "development")}
 
 # Mount Modular Routers
 app.include_router(auth_router)
