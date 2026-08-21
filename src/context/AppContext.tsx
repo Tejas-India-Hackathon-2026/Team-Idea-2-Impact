@@ -68,7 +68,11 @@ interface AppContextType {
   notification: string | null;
   showNotification: (msg: string) => void;
 
-  // Auth Actions
+  // Email + Password Auth Actions
+  loginWithEmail: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  signupWithEmail: (name: string, email: string, password: string, role?: Role) => Promise<{ success: boolean; message?: string }>;
+  forgotPassword: (email: string) => Promise<{ success: boolean; message?: string; token?: string }>;
+  resetPassword: (email: string, resetToken: string, newPassword: string) => Promise<boolean>;
   sendOtp: (phone: string, role?: Role, channel?: string) => Promise<boolean>;
   verifyOtp: (code: string) => Promise<boolean>;
   switchUserRole: (targetRole: Role) => void;
@@ -369,6 +373,135 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // OTP & AUTH FLOWS
   const [firebaseConfirmationResult, setFirebaseConfirmationResult] = useState<any>(null);
+
+  const loginWithEmail = async (email: string, password: string): Promise<{ success: boolean; message?: string }> => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        return { success: false, message: data.detail || data.message || 'Invalid email or password.' };
+      }
+
+      const userRoles: Role[] = data.user.roles || [data.user.role || 'customer'];
+      const primaryRole: Role = data.user.role || 'customer';
+
+      const verifiedUser: UserProfile = {
+        id: String(data.user.id),
+        name: data.user.name,
+        email: data.user.email,
+        phone: data.user.phone || '',
+        roles: userRoles,
+        activeRole: primaryRole,
+        pincode: data.user.pincode || locationData.pincode,
+        city: data.user.city || locationData.city,
+        location: locationData
+      };
+
+      setIsAuthenticated(true);
+      setUser(verifiedUser);
+      localStorage.setItem('localkart_token', data.token || `lk_auth_${data.user.id}`);
+      localStorage.setItem('localkart_user', JSON.stringify(verifiedUser));
+
+      showNotification(`Welcome back, ${verifiedUser.name}!`);
+
+      if (userRoles.length > 1) {
+        setActiveScreenState('continue_as');
+      } else if (userRoles.includes('seller')) {
+        setActiveRoleState('seller');
+        setActiveScreenState('seller_dashboard');
+      } else if (userRoles.includes('delivery')) {
+        setActiveRoleState('delivery');
+        setActiveScreenState('delivery_dashboard');
+      } else {
+        setActiveRoleState('customer');
+        setActiveScreenState('permissions');
+      }
+
+      return { success: true, message: data.message };
+    } catch (err: any) {
+      return { success: false, message: 'Unable to connect to login server.' };
+    }
+  };
+
+  const signupWithEmail = async (name: string, email: string, password: string, role: Role = 'customer'): Promise<{ success: boolean; message?: string }> => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, role, pincode: locationData.pincode, city: locationData.city })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        return { success: false, message: data.detail || data.message || 'Failed to create account.' };
+      }
+
+      const userRoles: Role[] = data.user.roles || [role];
+
+      const newUser: UserProfile = {
+        id: String(data.user.id),
+        name: data.user.name,
+        email: data.user.email,
+        phone: '',
+        roles: userRoles,
+        activeRole: role,
+        pincode: data.user.pincode || locationData.pincode,
+        city: data.user.city || locationData.city,
+        location: locationData
+      };
+
+      setIsAuthenticated(true);
+      setUser(newUser);
+      localStorage.setItem('localkart_token', data.token || `lk_auth_${data.user.id}`);
+      localStorage.setItem('localkart_user', JSON.stringify(newUser));
+
+      showNotification(`Account created! Welcome, ${newUser.name}!`);
+      setActiveRoleState(role);
+      setActiveScreenState('permissions');
+
+      return { success: true, message: data.message };
+    } catch (err: any) {
+      return { success: false, message: 'Unable to connect to authentication server.' };
+    }
+  };
+
+  const forgotPassword = async (email: string): Promise<{ success: boolean; message?: string; token?: string }> => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        return { success: false, message: data.detail || data.message || 'Failed to generate reset link.' };
+      }
+      return { success: true, message: data.message, token: data.reset_token };
+    } catch (err: any) {
+      return { success: false, message: 'Server connection failed.' };
+    }
+  };
+
+  const resetPassword = async (email: string, resetToken: string, newPassword: string): Promise<boolean> => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, reset_token: resetToken, new_password: newPassword })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showNotification(data.message || 'Password reset successfully!');
+        return true;
+      }
+      return false;
+    } catch (err) {
+      return false;
+    }
+  };
 
   const startLoginFlow = () => {
     setAuthMode('login');
@@ -946,6 +1079,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       showNotification,
       sendOtp,
       verifyOtp,
+      loginWithEmail,
+      signupWithEmail,
+      forgotPassword,
+      resetPassword,
       switchUserRole,
       registerCustomer,
       registerCustomerAccount,

@@ -31,13 +31,16 @@ DROP TABLE IF EXISTS users CASCADE;
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     firebase_uid VARCHAR(128) UNIQUE,
-    phone VARCHAR(20) UNIQUE NOT NULL,
-    password VARCHAR(255),
+    email VARCHAR(120) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    phone VARCHAR(20),
     role VARCHAR(30) DEFAULT 'customer', -- customer, seller, delivery_partner, admin
     name VARCHAR(100) DEFAULT '',
-    email VARCHAR(120),
     profile_image TEXT,
     status VARCHAR(20) DEFAULT 'active', -- active, suspended, pending
+    is_email_verified BOOLEAN DEFAULT FALSE,
+    reset_token VARCHAR(100),
+    reset_token_expires TIMESTAMP,
     latitude DECIMAL(9, 6),
     longitude DECIMAL(9, 6),
     pincode VARCHAR(10) DEFAULT '560034',

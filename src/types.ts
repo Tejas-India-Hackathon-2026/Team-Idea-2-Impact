@@ -3,6 +3,7 @@ export type Role = 'customer' | 'seller' | 'delivery' | 'admin' | 'design_system
 export type Screen = 
   | 'auth_welcome'
   | 'login_mobile'
+  | 'forgot_password'
   | 'verify_otp'
   | 'role_select'
   | 'customer_registration'

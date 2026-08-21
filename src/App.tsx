@@ -31,6 +31,7 @@ import { DevViewportPreview } from './components/DevViewportPreview';
 
 import { SplashModal } from './components/SplashModal';
 import { PermissionsModal } from './components/PermissionsModal';
+import { ForgotPasswordModal } from './components/ForgotPasswordModal';
 
 const MainLayout: React.FC = () => {
   const { activeRole, activeScreen, isAuthenticated, user, notification } = useApp();
@@ -39,6 +40,7 @@ const MainLayout: React.FC = () => {
   if (activeScreen === 'splash') return <SplashModal />;
   if (activeScreen === 'auth_welcome') return <AuthWelcomeModal />;
   if (activeScreen === 'login_mobile') return <LoginModal />;
+  if (activeScreen === 'forgot_password') return <ForgotPasswordModal />;
   if (activeScreen === 'verify_otp') return <OTPVerifyModal />;
   if (activeScreen === 'role_select') return <RoleSelectModal />;
   if (activeScreen === 'customer_registration') return <CustomerRegisterModal />;

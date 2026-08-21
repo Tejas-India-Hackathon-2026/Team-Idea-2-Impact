@@ -1,38 +1,59 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { ArrowLeft, ShieldCheck, ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, ArrowRight, Sparkles, Mail, Lock, User as UserIcon } from 'lucide-react';
 
 export const LoginModal: React.FC = () => {
-  const { sendOtp, setActiveScreen, requestedRole, authMode, startLoginFlow, startSignUpFlow } = useApp();
-  const [channel, setChannel] = useState<'sms' | 'whatsapp'>('sms');
-  const [phoneNumber, setPhoneNumber] = useState<string>('');
+  const { loginWithEmail, signupWithEmail, setActiveScreen, requestedRole, authMode, startLoginFlow, startSignUpFlow } = useApp();
+  const [name, setName] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  const isLogin = authMode === 'login';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleaned = phoneNumber.replace(/\D/g, '');
-    if (cleaned.length < 10) {
-      setErrorMsg('Please enter a valid 10-digit mobile number.');
+    setErrorMsg(null);
+
+    // Email format validation
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email.trim())) {
+      setErrorMsg('Please enter a valid email address (e.g. user@example.com).');
       return;
     }
-    setErrorMsg(null);
+
+    // Password strength validation
+    if (password.length < 6) {
+      setErrorMsg('Password must be at least 6 characters long.');
+      return;
+    }
+
+    if (!isLogin && !name.trim()) {
+      setErrorMsg('Please enter your full name to sign up.');
+      return;
+    }
+
     setIsLoading(true);
-    const success = await sendOtp(`+91${cleaned.slice(-10)}`, requestedRole, channel);
-    setIsLoading(false);
-    if (!success) {
-      setErrorMsg('Failed to send OTP. Please check your phone number or connection.');
+
+    if (isLogin) {
+      const res = await loginWithEmail(email.trim(), password);
+      setIsLoading(false);
+      if (!res.success) {
+        setErrorMsg(res.message || 'Invalid email address or password.');
+      }
+    } else {
+      const res = await signupWithEmail(name.trim(), email.trim(), password, requestedRole);
+      setIsLoading(false);
+      if (!res.success) {
+        setErrorMsg(res.message || 'Failed to create account.');
+      }
     }
   };
 
-  const isLogin = authMode === 'login';
-
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-4 font-sans relative overflow-y-auto box-border select-none">
-      {/* Firebase reCAPTCHA Container */}
-      <div id="recaptcha-container"></div>
-
-      {/* Subtle Background Radial Glow */}
+      {/* Background Radial Glow */}
       <div className="absolute -top-32 -left-32 w-80 h-80 bg-teal-500/15 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute -bottom-32 -right-32 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -53,92 +74,108 @@ export const LoginModal: React.FC = () => {
           <div className="text-left">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-400 text-[11px] font-semibold tracking-wide uppercase mb-3">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>{isLogin ? 'Welcome Back' : 'Get Started'}</span>
+              <span>{isLogin ? 'Welcome Back' : 'Create Account'}</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-[10px]">
-              {isLogin ? 'Login to LocalKart' : 'Create your account'}
+              {isLogin ? 'Login to LocalKart' : 'Sign Up for LocalKart'}
             </h2>
             <p className="text-slate-300 text-xs sm:text-sm font-normal leading-relaxed mb-4">
               {isLogin
-                ? 'Enter your registered phone number to receive an OTP.'
-                : 'Enter your phone number to receive a verification OTP.'}
+                ? 'Enter your registered email address and password.'
+                : 'Enter your name, email address, and strong password.'}
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="pt-1">
-            {/* OTP Channel Selector */}
-            <div className="mb-4">
-              <label className="block text-xs font-semibold text-slate-200 uppercase tracking-wider mb-2">
-                Receive OTP via
+          <form onSubmit={handleSubmit} className="pt-1 space-y-3.5">
+            {!isLogin && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-200 uppercase tracking-wider mb-1.5">
+                  Full Name
+                </label>
+                <div className="flex items-center h-12 bg-slate-950 border border-teal-500/40 rounded-xl overflow-hidden px-3 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-400/30 transition-all">
+                  <UserIcon className="w-4 h-4 text-teal-400 mr-2.5 shrink-0" />
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter your full name"
+                    className="w-full h-full bg-transparent text-white placeholder-slate-500 text-sm focus:outline-none"
+                    required={!isLogin}
+                    autoFocus={!isLogin}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-200 uppercase tracking-wider mb-1.5">
+                Email Address
               </label>
-              <div className="grid grid-cols-2 gap-2 p-1 bg-slate-950 border border-slate-800 rounded-xl">
-                <button
-                  type="button"
-                  onClick={() => setChannel('sms')}
-                  className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-                    channel === 'sms'
-                      ? 'bg-teal-500 text-slate-950 shadow-md'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <span>💬 SMS Text</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setChannel('whatsapp')}
-                  className={`py-2 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-                    channel === 'whatsapp'
-                      ? 'bg-emerald-500 text-slate-950 shadow-md'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <span>🟢 WhatsApp</span>
-                </button>
+              <div className="flex items-center h-12 bg-slate-950 border border-teal-500/40 rounded-xl overflow-hidden px-3 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-400/30 transition-all">
+                <Mail className="w-4 h-4 text-teal-400 mr-2.5 shrink-0" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  className="w-full h-full bg-transparent text-white placeholder-slate-500 text-sm focus:outline-none"
+                  required
+                  autoFocus={isLogin}
+                />
               </div>
             </div>
 
-            <div className="mb-[12px]">
-              <label className="block text-xs font-semibold text-slate-200 uppercase tracking-wider mb-2">
-                Phone Number
-              </label>
-              <div className="flex items-center h-12 bg-slate-950 border border-teal-500/40 rounded-xl overflow-hidden focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-400/30 transition-all shadow-inner">
-                <div className="px-3.5 bg-slate-900 text-teal-400 font-bold text-xs sm:text-sm border-r border-slate-800 h-full flex items-center shrink-0 min-w-[65px] justify-center select-none">
-                  <span>+91</span>
-                </div>
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-slate-200 uppercase tracking-wider">
+                  Password
+                </label>
+                {isLogin && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveScreen('forgot_password')}
+                    className="text-xs text-teal-400 hover:underline font-medium"
+                  >
+                    Forgot Password?
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center h-12 bg-slate-950 border border-teal-500/40 rounded-xl overflow-hidden px-3 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-400/30 transition-all">
+                <Lock className="w-4 h-4 text-teal-400 mr-2.5 shrink-0" />
                 <input
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="Enter 10-digit phone number"
-                  className="w-full h-full px-4 bg-transparent text-white placeholder-slate-500 text-sm font-normal focus:outline-none tracking-wider"
-                  maxLength={10}
-                  autoFocus
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full h-full bg-transparent text-white placeholder-slate-500 text-sm focus:outline-none"
+                  required
                 />
               </div>
-              {errorMsg && (
-                <p className="text-rose-400 text-xs sm:text-sm font-normal bg-rose-500/10 border border-rose-500/20 rounded-xl py-2 px-3 mt-2">
-                  {errorMsg}
-                </p>
-              )}
             </div>
+
+            {errorMsg && (
+              <p className="text-rose-400 text-xs sm:text-sm font-normal bg-rose-500/10 border border-rose-500/20 rounded-xl py-2 px-3">
+                {errorMsg}
+              </p>
+            )}
 
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full h-12 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-400 hover:from-teal-400 hover:to-emerald-300 text-slate-950 font-bold text-sm sm:text-base shadow-lg shadow-teal-950/60 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 mb-[14px]"
+              className="w-full h-12 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-400 hover:from-teal-400 hover:to-emerald-300 text-slate-950 font-bold text-sm sm:text-base shadow-lg shadow-teal-950/60 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 mt-2"
             >
               {isLoading ? (
-                <span>Sending OTP via {channel.toUpperCase()}...</span>
+                <span>{isLogin ? 'Logging in...' : 'Creating Account...'}</span>
               ) : (
                 <>
-                  <span>Send OTP via {channel === 'whatsapp' ? 'WhatsApp' : 'SMS'}</span>
+                  <span>{isLogin ? 'Login' : 'Sign Up'}</span>
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
             </button>
           </form>
 
-          <div className="text-center pt-3 border-t border-slate-800/80">
+          <div className="text-center pt-3 mt-4 border-t border-slate-800/80">
             {isLogin ? (
               <span className="text-xs sm:text-sm font-normal text-slate-400">
                 Don't have an account?{' '}
@@ -172,9 +209,9 @@ export const LoginModal: React.FC = () => {
         </div>
 
         {/* Security Badge */}
-        <div className="mt-1.5 flex items-center justify-center gap-2 text-xs text-slate-400">
+        <div className="mt-2.5 flex items-center justify-center gap-2 text-xs text-slate-400">
           <ShieldCheck className="w-4 h-4 text-teal-400 shrink-0" />
-          <span>Secure 100% Indian Hyperlocal OTP Verification</span>
+          <span>Secure Encrypted Password Authentication</span>
         </div>
       </div>
     </div>

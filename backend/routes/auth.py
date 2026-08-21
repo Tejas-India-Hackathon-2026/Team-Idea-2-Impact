@@ -1,116 +1,260 @@
-# LocalKart Production Authentication API Router
+# LocalKart Email + Password Production Authentication API Router
+import re
 import time
-from typing import Optional
+import secrets
+from typing import Optional, List
 from fastapi import APIRouter, HTTPException, Depends, Header, status
 from pydantic import BaseModel
+from werkzeug.security import generate_password_hash, check_password_hash
 
-from backend.firebase_config import verify_firebase_token
 from backend.database import query_db, execute_db
-from backend.dependencies import get_current_user
 
-router = APIRouter(prefix="/api/auth", tags=["Authentication"])
+router = APIRouter(prefix="/api/auth", tags=["Email/Password Authentication"])
 
-class VerifyTokenSchema(BaseModel):
-    id_token: str
-    requested_role: Optional[str] = "customer"
+# Session Token Cache
+SESSIONS: dict = {}
 
-class RegisterProfileSchema(BaseModel):
-    id_token: str
+EMAIL_REGEX = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+
+# ----------------------------------------------------
+# PYDANTIC SCHEMAS
+# ----------------------------------------------------
+class SignupSchema(BaseModel):
     name: str
-    email: Optional[str] = ""
-    role: str  # "customer", "seller", "delivery_partner"
+    email: str
+    password: str
+    role: Optional[str] = "customer"
     pincode: Optional[str] = "560034"
     city: Optional[str] = "Bengaluru"
-    state: Optional[str] = "Karnataka"
 
-@router.post("/verify-token")
-def verify_firebase_id_token(payload: VerifyTokenSchema):
+class LoginSchema(BaseModel):
+    email: str
+    password: str
+
+class ForgotPasswordSchema(BaseModel):
+    email: str
+
+class ResetPasswordSchema(BaseModel):
+    email: str
+    reset_token: str
+    new_password: str
+
+# ----------------------------------------------------
+# AUTHENTICATION ENDPOINTS
+# ----------------------------------------------------
+@router.post("/signup")
+def signup_user(payload: SignupSchema):
     """
-    Verifies Firebase ID token sent after client-side SMS OTP verification.
-    Finds or provisions user in PostgreSQL database.
+    Registers a new user with Name, Email, and Password.
+    Hashes password using Werkzeug and provisions user in database.
     """
-    decoded = verify_firebase_token(payload.id_token)
-    if not decoded or "uid" not in decoded:
+    email = payload.email.strip().lower()
+    name = payload.name.strip()
+    password = payload.password
+
+    # 1. Email Format Validation
+    if not re.match(EMAIL_REGEX, email):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired Firebase ID token."
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid email address format. Please enter a valid email (e.g. user@example.com)."
         )
 
-    firebase_uid = decoded["uid"]
-    raw_phone = decoded.get("phone_number", "")
-    phone = raw_phone.replace("+91", "").replace("+", "").strip() or "9876543210"
+    # 2. Password Strength Validation
+    if len(password) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 6 characters long."
+        )
 
-    user = query_db("SELECT * FROM users WHERE firebase_uid = ?", (firebase_uid,), one=True)
+    if not name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Please provide your full name."
+        )
 
-    if not user:
-        # Check by phone number
-        user = query_db("SELECT * FROM users WHERE phone = ?", (phone,), one=True)
-        if user:
-            # Update firebase_uid on existing phone user
-            execute_db("UPDATE users SET firebase_uid = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (firebase_uid, user["id"]))
-            user = query_db("SELECT * FROM users WHERE id = ?", (user["id"],), one=True)
-        else:
-            # Provision new user in PostgreSQL
-            new_id = execute_db(
-                """INSERT INTO users (firebase_uid, phone, role, name, status, pincode, city, state)
-                   VALUES (?, ?, ?, ?, 'active', '560034', 'Bengaluru', 'Karnataka')""",
-                (firebase_uid, phone, payload.requested_role or "customer", f"User {phone[-4:]}")
-            )
-            user = query_db("SELECT * FROM users WHERE id = ?", (new_id,), one=True)
+    # 3. Check for Existing Email
+    existing = query_db("SELECT * FROM users WHERE LOWER(email) = ?", (email,), one=True)
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="An account with this email address already exists. Please login instead."
+        )
 
-    return {
-        "success": True,
-        "authenticated": True,
-        "user": user,
-        "token": payload.id_token,
-        "message": "Firebase ID Token verified successfully against production backend database!"
+    # 4. Hash Password Securely (Never Store Plain-Text)
+    password_hash = generate_password_hash(password)
+    requested_role = payload.role if payload.role in ["customer", "seller", "delivery_partner", "admin"] else "customer"
+
+    new_id = execute_db(
+        """INSERT INTO users (name, email, password, role, pincode, city, state, status, is_email_verified)
+           VALUES (?, ?, ?, ?, ?, ?, 'Karnataka', 'active', 1)""",
+        (name, email, password_hash, requested_role, payload.pincode or "560034", payload.city or "Bengaluru")
+    )
+
+    # Assign initial role in user_roles table
+    execute_db(
+        "INSERT INTO user_roles (user_id, role, approved) VALUES (?, ?, 1)",
+        (new_id, requested_role)
+    )
+
+    user = query_db("SELECT id, name, email, role, pincode, city, state, created_at FROM users WHERE id = ?", (new_id,), one=True)
+    user["roles"] = [requested_role]
+
+    token = f"lk_auth_{new_id}_{secrets.token_hex(8)}"
+    SESSIONS[token] = {
+        "user_id": new_id,
+        "email": email,
+        "roles": [requested_role],
+        "created_at": time.time()
     }
 
-@router.post("/register-profile")
-def register_user_profile(payload: RegisterProfileSchema):
-    """
-    Completes user profile registration with role, name, location in database.
-    """
-    decoded = verify_firebase_token(payload.id_token)
-    if not decoded or "uid" not in decoded:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired Firebase ID token."
-        )
-
-    firebase_uid = decoded["uid"]
-    phone = decoded.get("phone_number", "").replace("+91", "").replace("+", "").strip() or "9876543210"
-
-    existing = query_db("SELECT * FROM users WHERE firebase_uid = ?", (firebase_uid,), one=True)
-
-    if existing:
-        execute_db(
-            """UPDATE users 
-               SET name = ?, email = ?, role = ?, pincode = ?, city = ?, state = ?, updated_at = CURRENT_TIMESTAMP
-               WHERE firebase_uid = ?""",
-            (payload.name, payload.email or "", payload.role, payload.pincode or "560034", payload.city or "Bengaluru", payload.state or "Karnataka", firebase_uid)
-        )
-        user = query_db("SELECT * FROM users WHERE firebase_uid = ?", (firebase_uid,), one=True)
-    else:
-        new_id = execute_db(
-            """INSERT INTO users (firebase_uid, phone, role, name, email, pincode, city, state, status)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')""",
-            (firebase_uid, phone, payload.role, payload.name, payload.email or "", payload.pincode or "560034", payload.city or "Bengaluru", payload.state or "Karnataka")
-        )
-        user = query_db("SELECT * FROM users WHERE id = ?", (new_id,), one=True)
-
     return {
         "success": True,
-        "message": f"Profile registered successfully as {payload.role.upper()}",
+        "message": f"Account created successfully as {requested_role.upper()}!",
+        "token": token,
         "user": user
     }
 
-@router.get("/me")
-def get_me(current_user: dict = Depends(get_current_user)):
+@router.post("/login")
+def login_user(payload: LoginSchema):
     """
-    Returns current authenticated user profile verified against PostgreSQL.
+    Authenticates user using Email & Password.
+    Compares Werkzeug password hash and returns session token + user roles.
     """
-    return {
-        "authenticated": True,
-        "user": current_user
+    email = payload.email.strip().lower()
+    password = payload.password
+
+    if not email or not password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Please provide both email address and password."
+        )
+
+    # 1. Query User by Email
+    user = query_db("SELECT * FROM users WHERE LOWER(email) = ?", (email,), one=True)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email address or password. Please check your credentials."
+        )
+
+    # 2. Verify Password Hash
+    stored_hash = user.get("password", "")
+    if not stored_hash or not check_password_hash(stored_hash, password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email address or password. Please check your credentials."
+        )
+
+    # 3. Check Account Status
+    if user.get("status") == "suspended":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account has been suspended. Please contact platform support."
+        )
+
+    # 4. Fetch User Roles
+    roles_records = query_db("SELECT role FROM user_roles WHERE user_id = ?", (user["id"],))
+    user_roles = [r["role"] for r in roles_records] if roles_records else [user["role"]]
+
+    user_data = {
+        "id": user["id"],
+        "name": user["name"],
+        "email": user["email"],
+        "phone": user.get("phone", ""),
+        "role": user["role"],
+        "roles": user_roles,
+        "pincode": user.get("pincode", "560034"),
+        "city": user.get("city", "Bengaluru"),
+        "state": user.get("state", "Karnataka")
     }
+
+    token = f"lk_auth_{user['id']}_{secrets.token_hex(8)}"
+    SESSIONS[token] = {
+        "user_id": user["id"],
+        "email": email,
+        "roles": user_roles,
+        "created_at": time.time()
+    }
+
+    return {
+        "success": True,
+        "message": f"Welcome back, {user['name']}!",
+        "token": token,
+        "user": user_data
+    }
+
+@router.post("/forgot-password")
+def forgot_password(payload: ForgotPasswordSchema):
+    """
+    Generates a secure password reset token for the given email address.
+    """
+    email = payload.email.strip().lower()
+    if not re.match(EMAIL_REGEX, email):
+        raise HTTPException(status_code=400, detail="Please enter a valid email address.")
+
+    user = query_db("SELECT * FROM users WHERE LOWER(email) = ?", (email,), one=True)
+    if not user:
+        # Security best practice: Return generic success notice to prevent email enumeration
+        return {
+            "success": True,
+            "message": "If an account exists with this email, a password reset link has been dispatched."
+        }
+
+    reset_token = secrets.token_hex(16)
+    execute_db(
+        "UPDATE users SET reset_token = ?, reset_token_expires = CURRENT_TIMESTAMP WHERE id = ?",
+        (reset_token, user["id"])
+    )
+
+    return {
+        "success": True,
+        "message": "Password reset token generated successfully!",
+        "reset_token": reset_token,
+        "reset_link": f"/reset-password?token={reset_token}&email={email}"
+    }
+
+@router.post("/reset-password")
+def reset_password(payload: ResetPasswordSchema):
+    """
+    Resets user password using valid reset token.
+    """
+    email = payload.email.strip().lower()
+    if len(payload.new_password) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters long.")
+
+    user = query_db("SELECT * FROM users WHERE LOWER(email) = ?", (email,), one=True)
+    if not user or user.get("reset_token") != payload.reset_token:
+        raise HTTPException(status_code=400, detail="Invalid or expired password reset token.")
+
+    new_hash = generate_password_hash(payload.new_password)
+    execute_db(
+        "UPDATE users SET password = ?, reset_token = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        (new_hash, user["id"])
+    )
+
+    return {
+        "success": True,
+        "message": "Password reset successfully! You can now log in with your new password."
+    }
+
+@router.get("/me")
+def get_current_user(token: Optional[str] = Header(None)):
+    """
+    Returns authenticated user profile from persistent session token.
+    """
+    if not token or token not in SESSIONS:
+        return {"authenticated": False, "user": None}
+
+    session = SESSIONS[token]
+    user = query_db("SELECT id, name, email, phone, role, pincode, city, state FROM users WHERE id = ?", (session["user_id"],), one=True)
+    if not user:
+        return {"authenticated": False, "user": None}
+
+    user["roles"] = session["roles"]
+    return {"authenticated": True, "user": user}
+
+@router.post("/logout")
+def logout_user(token: Optional[str] = Header(None)):
+    if token and token in SESSIONS:
+        del SESSIONS[token]
+    return {"success": True, "message": "Logged out successfully."}
