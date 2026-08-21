@@ -13,6 +13,7 @@ export const SellerRegisterModal: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
 
   const [storeName, setStoreName] = useState<string>('');
+  const [sellerType, setSellerType] = useState<string>('Individual / Artisan / Home Business');
   const [category, setCategory] = useState<string>('Handmade');
   const [description, setDescription] = useState<string>('');
   const [address, setAddress] = useState<string>('');
@@ -69,7 +70,7 @@ export const SellerRegisterModal: React.FC = () => {
       }
     }
 
-    await registerSellerAccount(storeName, category, pincode, description);
+    await registerSellerAccount(storeName, category, pincode, description, sellerType);
     setIsLoading(false);
   };
 
@@ -225,6 +226,23 @@ export const SellerRegisterModal: React.FC = () => {
               className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:border-emerald-400 focus:outline-none"
               required
             />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+              Type of Seller / Business Model
+            </label>
+            <select
+              value={sellerType}
+              onChange={(e) => setSellerType(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:border-emerald-400 focus:outline-none font-medium text-emerald-300"
+            >
+              <option value="Individual / Artisan / Home Business">Individual / Artisan / Home Business (Handmade & Local Goods)</option>
+              <option value="Local Retail Shop / Storeowner">Local Retail Shop / Storeowner (Neighborhood Shop)</option>
+              <option value="Farmer / Producer / Organic Goods">Farmer / Producer / Organic Goods (Fresh Goods)</option>
+              <option value="Wholesaler / Distributor">Wholesaler / Distributor (Bulk Goods)</option>
+              <option value="Service Provider / Specialist">Service Provider / Specialist (Custom Work & Services)</option>
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

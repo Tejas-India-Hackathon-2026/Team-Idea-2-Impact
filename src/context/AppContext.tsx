@@ -78,7 +78,7 @@ interface AppContextType {
   switchUserRole: (targetRole: Role) => void;
   registerCustomer: (name: string, location: string) => void;
   registerCustomerAccount: (name: string, email?: string, pincode?: string, city?: string) => Promise<boolean>;
-  registerSellerAccount: (storeName: string, category: string, pincode: string, description: string) => Promise<boolean>;
+  registerSellerAccount: (storeName: string, category: string, pincode: string, description: string, sellerType?: string) => Promise<boolean>;
   registerDeliveryAccount: (name: string, vehicleType: string, license: string, pincode: string) => Promise<boolean>;
   logout: () => void;
 
@@ -771,12 +771,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const registerSellerAccount = async (storeName: string, category: string, pincode: string, description: string): Promise<boolean> => {
+  const registerSellerAccount = async (storeName: string, category: string, pincode: string, description: string, sellerType: string = 'Individual / Artisan'): Promise<boolean> => {
     try {
       const res = await fetch(`${API_BASE}/auth/register-seller`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ business_name: storeName, description, pincode, phone: user?.phone })
+        body: JSON.stringify({ business_name: storeName, description, pincode, category, seller_type: sellerType, phone: user?.phone })
       });
       if (res.ok) {
         if (user) {

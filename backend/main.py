@@ -128,6 +128,7 @@ class RegisterSellerSchema(BaseModel):
     description: Optional[str] = ""
     pincode: Optional[str] = "560034"
     category: Optional[str] = "Handmade"
+    seller_type: Optional[str] = "Individual / Artisan / Home Business"
 
 class RegisterDeliverySchema(BaseModel):
     phone: Optional[str] = "9812345678"
@@ -388,6 +389,7 @@ def register_seller_endpoint(payload: RegisterSellerSchema):
         "id": f"s_{phone}",
         "shopName": payload.business_name,
         "shopCategory": payload.category or "Handmade",
+        "sellerType": payload.seller_type or "Individual / Artisan / Home Business",
         "description": payload.description or "",
         "verificationStatus": "PENDING_REVIEW",
         "verifiedBadge": False
