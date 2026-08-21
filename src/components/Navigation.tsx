@@ -158,7 +158,7 @@ export const Navigation: React.FC = () => {
         </div>
       </header>
 
-      {/* MOBILE CUSTOMER BOTTOM NAVIGATION (Section 14: Home | Categories | Search | Wishlist | Profile) */}
+      {/* MOBILE CUSTOMER BOTTOM NAVIGATION (Home | Search | Categories | Orders | Profile) */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-800 py-1.5 px-3 flex items-center justify-around font-sans shadow-2xl">
         <button
           onClick={() => setActiveScreen('home')}
@@ -168,16 +168,6 @@ export const Navigation: React.FC = () => {
         >
           <Home className="w-5 h-5" />
           <span>Home</span>
-        </button>
-
-        <button
-          onClick={() => setActiveScreen('categories')}
-          className={`flex flex-col items-center justify-center min-h-[44px] px-2 gap-1 text-[11px] font-semibold transition-colors ${
-            activeScreen === 'categories' ? 'text-emerald-400' : 'text-slate-400'
-          }`}
-        >
-          <Grid className="w-5 h-5" />
-          <span>Categories</span>
         </button>
 
         <button
@@ -191,13 +181,23 @@ export const Navigation: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setActiveScreen('wishlist')}
+          onClick={() => setActiveScreen('categories')}
           className={`flex flex-col items-center justify-center min-h-[44px] px-2 gap-1 text-[11px] font-semibold transition-colors ${
-            activeScreen === 'wishlist' ? 'text-emerald-400' : 'text-slate-400'
+            activeScreen === 'categories' ? 'text-emerald-400' : 'text-slate-400'
           }`}
         >
-          <Heart className="w-5 h-5" />
-          <span>Wishlist</span>
+          <Grid className="w-5 h-5" />
+          <span>Categories</span>
+        </button>
+
+        <button
+          onClick={() => setActiveScreen('orders')}
+          className={`flex flex-col items-center justify-center min-h-[44px] px-2 gap-1 text-[11px] font-semibold transition-colors ${
+            activeScreen === 'orders' ? 'text-emerald-400' : 'text-slate-400'
+          }`}
+        >
+          <ShoppingBag className="w-5 h-5" />
+          <span>Orders</span>
         </button>
 
         <button
