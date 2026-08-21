@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   ArrowLeft, Truck, MapPin, CheckCircle2, Clock, 
-  Store, AlertCircle, Sparkles, X, ShieldCheck, RefreshCw 
+  Store, AlertCircle, Sparkles, X, ShieldCheck, RefreshCw, Navigation as NavIcon 
 } from 'lucide-react';
 import { Order } from '../types';
 
@@ -32,6 +32,7 @@ export const OrderTrackingView: React.FC = () => {
   const statusLower = selectedOrder.status.toLowerCase();
   const isCancelled = statusLower === 'cancelled';
   const isDelivered = statusLower === 'delivered';
+  const isOutForDelivery = statusLower === 'out_for_delivery';
   const isEligibleForCancellation = ['placed', 'confirmed', 'processing', 'pending'].includes(statusLower);
 
   // Timeline Progress Steps
@@ -137,6 +138,45 @@ export const OrderTrackingView: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* GOOGLE MAPS REAL-TIME TRACKING CONTAINER */}
+        {!isCancelled && (
+          <div className="space-y-3 bg-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                <NavIcon className="w-4 h-4 text-emerald-400" /> Live Delivery Map & Tracking
+              </h3>
+              <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-md">
+                {isOutForDelivery ? 'ETA: ~20–25 Mins' : 'Delivery time being calculated'}
+              </span>
+            </div>
+
+            {/* Google Map Mock/Iframe View */}
+            <div className="relative w-full h-56 sm:h-64 rounded-2xl overflow-hidden border border-slate-800 bg-slate-900 flex items-center justify-center">
+              <div 
+                className="absolute inset-0 bg-cover bg-center opacity-60 filter brightness-90"
+                style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?w=1200&auto=format&fit=crop&q=80)' }}
+              />
+              
+              {/* Map Overlay Markers */}
+              <div className="relative z-10 p-4 bg-slate-950/85 backdrop-blur-md rounded-2xl border border-slate-800 text-center space-y-2 max-w-xs shadow-2xl">
+                <div className="flex items-center justify-center gap-2">
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">📍 Seller Shop</span>
+                  <span className="text-slate-500">→</span>
+                  <span className="px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-400 text-[10px] font-bold border border-blue-500/30">🚚 Delivery Agent</span>
+                  <span className="text-slate-500">→</span>
+                  <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-400 text-[10px] font-bold border border-purple-500/30">🏠 Destination</span>
+                </div>
+                <p className="text-xs font-semibold text-slate-200">
+                  {isOutForDelivery ? 'Agent on route to customer destination' : 'Partner assigned • Preparing pickup'}
+                </p>
+                <div className="text-[10px] text-slate-400">
+                  {isOutForDelivery ? 'Live location updated 1 min ago' : 'Live location will activate when out for delivery.'}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* VISUAL ORDER TIMELINE */}
         {!isCancelled && (
