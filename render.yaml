@@ -35,11 +35,10 @@ services:
       - key: GOOGLE_MAPS_API_KEY
         sync: false
 
-  # 2. React Vite Frontend Static Site
+  # 2. React Vite Frontend Static Site (Served via global CDN)
   - type: web
     name: localkart-frontend
     env: static
-    region: singapore
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     routes:
@@ -58,6 +57,5 @@ databases:
   # 3. Render Managed PostgreSQL Database
   - name: localkart-db
     databaseName: localkart
-    user: postgres
     region: singapore
     plan: free
