@@ -3,7 +3,8 @@ import { useApp } from '../context/AppContext';
 import { SellerNavigation } from './SellerNavigation';
 import { DeliveryNavigation } from './DeliveryNavigation';
 import { LocationPickerModal } from './LocationPickerModal';
-import { Home, Search, Heart, User, ShoppingBag, MapPin, UserCheck, Languages } from 'lucide-react';
+import { NotificationCenterModal } from './modals/NotificationCenterModal';
+import { Home, Search, Heart, User, ShoppingBag, MapPin, UserCheck, Languages, Bell, MessageSquare } from 'lucide-react';
 import { Screen } from '../types';
 
 export const Navigation: React.FC = () => {
@@ -21,6 +22,7 @@ export const Navigation: React.FC = () => {
   } = useApp();
 
   const [isLocationModalOpen, setIsLocationModalOpen] = useState<boolean>(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState<boolean>(false);
 
   // Delegate Seller & Delivery Navigation
   if (activeRole === 'seller') return <SellerNavigation />;
@@ -41,6 +43,11 @@ export const Navigation: React.FC = () => {
       <LocationPickerModal
         isOpen={isLocationModalOpen}
         onClose={() => setIsLocationModalOpen(false)}
+      />
+
+      <NotificationCenterModal
+        isOpen={isNotificationOpen}
+        onClose={() => setIsNotificationOpen(false)}
       />
 
       {/* DESKTOP CUSTOMER HEADER */}
@@ -87,8 +94,28 @@ export const Navigation: React.FC = () => {
             ))}
           </nav>
 
-          {/* Actions: Language Toggle, Cart, Account Switcher & Profile */}
-          <div className="flex items-center gap-2.5">
+          {/* Actions: Notifications, Chat, Language Toggle, Cart, Account Switcher */}
+          <div className="flex items-center gap-2">
+            
+            {/* Notification Bell */}
+            <button
+              onClick={() => setIsNotificationOpen(true)}
+              className="relative p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 transition-all"
+              title="Notifications"
+            >
+              <Bell className="w-4 h-4" />
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            </button>
+
+            {/* Messages Button */}
+            <button
+              onClick={() => setActiveScreen('chat')}
+              className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-blue-400 border border-slate-700 transition-all"
+              title="Customer Messages"
+            >
+              <MessageSquare className="w-4 h-4" />
+            </button>
+
             {/* Language Selector: English | हिन्दी */}
             <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-bold">
               <button
@@ -166,6 +193,13 @@ export const Navigation: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setIsNotificationOpen(true)}
+              className="p-1.5 rounded-xl bg-slate-800 text-amber-400 border border-slate-700"
+            >
+              <Bell className="w-4 h-4" />
+            </button>
+
             {/* Language Selector on Mobile */}
             <button
               onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')}

@@ -1,31 +1,60 @@
-# LocalKart Notifications Routes Blueprint
-from flask import Blueprint, jsonify, session
-from backend.models.notification import Notification
+# LocalKart Production Centralized Notification Router
+from typing import Optional
+from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
 
-notifications_bp = Blueprint('notifications', __name__)
+from backend.database import query_db, execute_db
 
-@notifications_bp.route('/api/notifications', methods=['GET'])
-def get_notifications():
-    """GET /api/notifications — Returns notifications and unread_count for logged-in user."""
-    user_id = session.get('user_id') or 5
-    notifs = Notification.get_by_user(user_id)
-    unread_count = Notification.get_unread_count(user_id)
+router = APIRouter(prefix="/api/notifications", tags=["Centralized Notifications"])
 
-    return jsonify({
-        'unread_count': unread_count,
-        'notifications': notifs
-    }), 200
+class CreateNotificationSchema(BaseModel):
+    user_id: int
+    title: str
+    message: str
+    type: str  # ORDER | PAYMENT | DELIVERY | REVIEW | RETURN | REFUND | CHAT | SELLER | PRODUCT | ADMIN | SYSTEM
+    link: Optional[str] = None
 
-@notifications_bp.route('/api/notifications/<int:notif_id>/read', methods=['PUT'])
-def mark_notification_read(notif_id):
-    """PUT /api/notifications/<id>/read — Marks a single notification as read."""
-    user_id = session.get('user_id') or 5
-    Notification.mark_read(notif_id, user_id)
-    return jsonify({'message': 'Notification marked as read'}), 200
+@router.get("")
+def list_user_notifications(user_id: int = 1, type: Optional[str] = None):
+    """Lists notifications for authenticated user, with optional category filter."""
+    if type:
+        notifications = query_db(
+            "SELECT * FROM notifications WHERE user_id = ? AND type = ? ORDER BY created_at DESC",
+            (user_id, type)
+        )
+    else:
+        notifications = query_db(
+            "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC",
+            (user_id,)
+        )
 
-@notifications_bp.route('/api/notifications/read-all', methods=['PUT'])
-def mark_all_notifications_read():
-    """PUT /api/notifications/read-all — Marks all notifications for user as read."""
-    user_id = session.get('user_id') or 5
-    Notification.mark_all_read(user_id)
-    return jsonify({'message': 'All notifications marked as read'}), 200
+    unread_count = len([n for n in notifications if n.get('read', 0) == 0])
+
+    return {
+        "status": "success",
+        "unread_count": unread_count,
+        "count": len(notifications),
+        "notifications": notifications
+    }
+
+@router.post("")
+def create_notification(payload: CreateNotificationSchema):
+    """Creates a new structured notification."""
+    notif_id = execute_db(
+        """INSERT INTO notifications (user_id, title, message, type)
+           VALUES (?, ?, ?, ?)""",
+        (payload.user_id, payload.title, payload.message, payload.type)
+    )
+    return {"status": "success", "id": notif_id}
+
+@router.post("/mark-read/{notification_id}")
+def mark_notification_as_read(notification_id: int):
+    """Marks a single notification as read."""
+    execute_db("UPDATE notifications SET read = 1 WHERE id = ?", (notification_id,))
+    return {"status": "success", "message": "Notification marked as read."}
+
+@router.post("/mark-all-read")
+def mark_all_notifications_as_read(user_id: int = 1):
+    """Marks all user notifications as read."""
+    execute_db("UPDATE notifications SET read = 1 WHERE user_id = ?", (user_id,))
+    return {"status": "success", "message": "All notifications marked as read."}
