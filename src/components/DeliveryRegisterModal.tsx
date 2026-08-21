@@ -39,12 +39,12 @@ export const DeliveryRegisterModal: React.FC = () => {
         </button>
 
         <div className="mb-6 flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+          <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
             <Truck className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-white">Delivery Partner Sign Up</h2>
-            <p className="text-xs text-slate-400">Deliver local orders & earn daily</p>
+            <h2 className="text-2xl font-black text-white">Join LocalKart Delivery</h2>
+            <p className="text-xs text-blue-400 font-semibold mt-0.5">Deliver locally. Earn flexibly.</p>
           </div>
         </div>
 

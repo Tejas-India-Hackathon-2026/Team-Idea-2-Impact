@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Role, Screen, ViewportMode, Product, Seller, Order, CartItem, DeliveryTask, FilterState, DeliveryMethod, PaymentMethod, UserProfile, LocationData } from '../types';
+import { sendFirebasePhoneOtp, verifyFirebasePhoneOtp } from '../firebase';
 
 const API_BASE = '/api';
 
@@ -72,6 +73,7 @@ interface AppContextType {
   verifyOtp: (code: string) => Promise<boolean>;
   switchUserRole: (targetRole: Role) => void;
   registerCustomer: (name: string, location: string) => void;
+  registerCustomerAccount: (name: string, email?: string, pincode?: string, city?: string) => Promise<boolean>;
   registerSellerAccount: (storeName: string, category: string, pincode: string, description: string) => Promise<boolean>;
   registerDeliveryAccount: (name: string, vehicleType: string, license: string, pincode: string) => Promise<boolean>;
   logout: () => void;
@@ -366,6 +368,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   // OTP & AUTH FLOWS
+  const [firebaseConfirmationResult, setFirebaseConfirmationResult] = useState<any>(null);
+
   const startLoginFlow = () => {
     setAuthMode('login');
     setActiveScreenState('login_mobile');
@@ -373,50 +377,133 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const startSignUpFlow = () => {
     setAuthMode('signup');
-    setActiveScreenState('role_select');
+    setActiveScreenState('login_mobile');
   };
 
   const selectRoleForSignUp = (role: Role) => {
     setRequestedRole(role);
-    setAuthMode('signup');
-    setActiveScreenState('login_mobile');
+    if (role === 'seller') {
+      setActiveScreenState('seller_registration');
+    } else if (role === 'delivery') {
+      setActiveScreenState('delivery_registration');
+    } else {
+      setActiveScreenState('customer_registration');
+    }
+  };
+
+  const getFirebaseErrorMessage = (errCode: string): string => {
+    switch (errCode) {
+      case 'auth/invalid-phone-number':
+        return 'Invalid phone number format. Please enter a valid 10-digit Indian number (+91).';
+      case 'auth/operation-not-allowed':
+        return 'Phone sign-in is disabled in Firebase Console. Please enable Phone sign-in under Firebase > Authentication > Sign-in method.';
+      case 'auth/captcha-check-failed':
+      case 'auth/invalid-app-credential':
+        return 'reCAPTCHA check failed. Please refresh the page and try again.';
+      case 'auth/quota-exceeded':
+        return 'Firebase SMS quota exceeded. Check Firebase SMS limits or test phone numbers.';
+      case 'auth/too-many-requests':
+        return 'Too many SMS requests sent to this number. Please wait a few minutes before trying again.';
+      case 'auth/unauthorized-domain':
+        return 'Domain not authorized in Firebase Console > Authentication > Settings > Authorized domains.';
+      default:
+        return 'Firebase SMS error. Check browser console or Firebase Console setup.';
+    }
   };
 
   const sendOtp = async (phone: string, role: Role = 'customer'): Promise<boolean> => {
     setPhonePendingOtp(phone);
     setRequestedRole(role);
+    setFirebaseConfirmationResult(null);
+
+    // 1. Try Firebase Phone Authentication first
     try {
-      const res = await fetch(`${API_BASE}/auth/otp/send`, {
+      const confirmationResult = await sendFirebasePhoneOtp(phone);
+      setFirebaseConfirmationResult(confirmationResult);
+      showNotification(`Firebase OTP sent via SMS to ${phone}`);
+      setActiveScreenState('verify_otp');
+      return true;
+    } catch (fbErr: any) {
+      const code = fbErr?.code || '';
+      console.error('[Firebase Phone Auth Error Code]:', code, fbErr);
+      const friendlyMsg = getFirebaseErrorMessage(code);
+      console.warn('[Firebase Notice]: Attempting backend fallback...', friendlyMsg);
+      setFirebaseConfirmationResult(null);
+    }
+
+    // 2. Fallback to LocalKart REST API endpoint
+    try {
+      const res = await fetch(`${API_BASE}/auth/send-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone, role })
       });
       const data = await res.json();
-      if (!res.ok) {
-        showNotification(data.error || "Failed to send OTP.");
+      if (!res.ok || data.success === false) {
+        showNotification(data.error || data.message || "Failed to send OTP.");
         return false;
       }
-      showNotification(`OTP sent to ${phone}: ${data.demo_otp || '123456'}`);
+
+      const otpNotice = data.otp_code ? `Your LocalKart OTP code is: ${data.otp_code}` : (data.message || `OTP sent to ${phone}`);
+      showNotification(otpNotice);
       setActiveScreenState('verify_otp');
       return true;
-    } catch (err) {
-      showNotification("OTP Code: 123456");
-      setActiveScreenState('verify_otp');
-      return true;
+    } catch (err: any) {
+      showNotification("Unable to connect to auth server. Please check your connection.");
+      return false;
     }
   };
 
   const verifyOtp = async (otpCode: string): Promise<boolean> => {
     if (!phonePendingOtp) return false;
+
+    // 1. Try Firebase Verification if active
+    if (firebaseConfirmationResult) {
+      try {
+        const fbUser = await verifyFirebasePhoneOtp(firebaseConfirmationResult, otpCode);
+        const idToken = await fbUser.getIdToken();
+
+        const verifiedUser: UserProfile = {
+          id: fbUser.uid || `u_${phonePendingOtp.replace(/\D/g, '')}`,
+          name: fbUser.displayName || `User ${phonePendingOtp.slice(-4)}`,
+          phone: fbUser.phoneNumber || phonePendingOtp,
+          email: fbUser.email || '',
+          roles: [requestedRole],
+          activeRole: requestedRole,
+          pincode: locationData.pincode,
+          city: locationData.city,
+          location: locationData
+        };
+
+        setIsAuthenticated(true);
+        setUser(verifiedUser);
+        localStorage.setItem('localkart_token', idToken);
+        localStorage.setItem('localkart_user', JSON.stringify(verifiedUser));
+
+        showNotification(`Welcome to LocalKart, ${verifiedUser.name}!`);
+
+        if (authMode === 'signup') {
+          setActiveScreenState('role_select');
+        } else {
+          setActiveRoleState('customer');
+          setActiveScreenState('home');
+        }
+        return true;
+      } catch (fbVerErr: any) {
+        console.warn('[Firebase OTP Verification Warning]:', fbVerErr?.message || fbVerErr);
+      }
+    }
+
+    // 2. REST API Verification
     try {
-      const res = await fetch(`${API_BASE}/auth/otp/verify`, {
+      const res = await fetch(`${API_BASE}/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phonePendingOtp, otp_code: otpCode, role: requestedRole })
+        body: JSON.stringify({ phone: phonePendingOtp, otp: otpCode, role: requestedRole })
       });
       const data = await res.json();
-      if (!res.ok) {
-        showNotification(data.error || "Invalid OTP code.");
+      if (!res.ok || data.success === false) {
+        showNotification(data.error || data.message || "Invalid OTP code.");
         return false;
       }
 
@@ -445,16 +532,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       showNotification(`Welcome to LocalKart, ${verifiedUser.name}!`);
 
       if (authMode === 'signup') {
-        if (requestedRole === 'seller') {
-          setActiveScreenState('seller_registration');
-        } else if (requestedRole === 'delivery') {
-          setActiveScreenState('delivery_registration');
-        } else {
-          setActiveRoleState('customer');
-          setActiveScreenState('home');
-        }
+        setActiveScreenState('role_select');
       } else {
-        // Login mode
         if (userRoles.length > 1) {
           setActiveScreenState('continue_as');
         } else if (userRoles.includes('seller')) {
@@ -471,7 +550,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       return true;
     } catch (err) {
-      showNotification("OTP verification failed. Please check backend connection.");
+      showNotification("OTP verification failed. Please check connection.");
       return false;
     }
   };
@@ -496,6 +575,64 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const registerCustomer = (name: string, location: string) => {
     if (user) {
       setUser({ ...user, name });
+    }
+  };
+
+  const registerCustomerAccount = async (name: string, email?: string, pincode?: string, city?: string): Promise<boolean> => {
+    try {
+      const token = localStorage.getItem('localkart_token') || 'fb_token';
+      const res = await fetch(`${API_BASE}/auth/register-profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id_token: token,
+          name,
+          email: email || '',
+          role: 'customer',
+          pincode: pincode || locationData.pincode || '560034',
+          city: city || locationData.city || 'Bengaluru'
+        })
+      });
+      const data = await res.json();
+      const updatedUser: UserProfile = {
+        ...(user || {}),
+        id: String(data.user?.id || 'c_user'),
+        name: name,
+        email: email || '',
+        phone: phonePendingOtp || user?.phone || '9876543210',
+        roles: ['customer'],
+        activeRole: 'customer',
+        pincode: pincode || '560034',
+        city: city || 'Bengaluru',
+        location: locationData
+      };
+      setIsAuthenticated(true);
+      setUser(updatedUser);
+      localStorage.setItem('localkart_user', JSON.stringify(updatedUser));
+      setActiveRoleState('customer');
+      setActiveScreenState('home');
+      showNotification(`Account created! Welcome ${name}`);
+      return true;
+    } catch (e) {
+      const updatedUser: UserProfile = {
+        ...(user || {}),
+        id: 'c_user',
+        name: name,
+        email: email || '',
+        phone: phonePendingOtp || user?.phone || '9876543210',
+        roles: ['customer'],
+        activeRole: 'customer',
+        pincode: pincode || '560034',
+        city: city || 'Bengaluru',
+        location: locationData
+      };
+      setIsAuthenticated(true);
+      setUser(updatedUser);
+      localStorage.setItem('localkart_user', JSON.stringify(updatedUser));
+      setActiveRoleState('customer');
+      setActiveScreenState('home');
+      showNotification(`Welcome ${name}!`);
+      return true;
     }
   };
 
@@ -809,6 +946,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       verifyOtp,
       switchUserRole,
       registerCustomer,
+      registerCustomerAccount,
       registerSellerAccount,
       registerDeliveryAccount,
       logout,

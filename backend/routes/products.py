@@ -1,88 +1,77 @@
-# LocalKart Products & Search Blueprint
-from flask import Blueprint, request, jsonify, session
-from backend.models.product import Product
+# LocalKart Products API Router
+from fastapi import APIRouter, HTTPException, Depends, Query, status
+from pydantic import BaseModel
+from typing import Optional, List
 
-products_bp = Blueprint('products', __name__)
+from backend.database import query_db, execute_db
+from backend.dependencies import get_current_user, require_seller, require_customer
 
-def calculate_distance_km(pincode1, pincode2):
-    p1 = str(pincode1 or '560034').strip()
-    p2 = str(pincode2 or '560034').strip()
-    if p1 == p2:
-        return 2.4
-    elif p1[:4] == p2[:4]:
-        return 3.8
-    elif p1[:3] == p2[:3]:
-        return 6.2
-    return 12.5
+router = APIRouter(prefix="/api/products", tags=["Products"])
 
-@products_bp.route('/api/products', methods=['GET'])
-def get_products():
-    category = request.args.get('category')
-    pincode = request.args.get('pincode') or session.get('localkart_pincode') or '560034'
+class ProductCreateSchema(BaseModel):
+    name: str
+    price: float
+    original_price: Optional[float] = None
+    category: str
+    quantity: Optional[int] = 10
+    description: Optional[str] = ""
+    image: Optional[str] = ""
+    is_handmade: Optional[bool] = True
+    prep_time: Optional[str] = "Ready to Ship"
+    material: Optional[str] = ""
 
-    if category and category.lower() != 'all':
-        products = Product.get_by_category(category)
+@router.get("")
+def list_products(
+    q: Optional[str] = "",
+    category: Optional[str] = "all",
+    pincode: Optional[str] = None
+):
+    query_str = f"%{(q or '').strip().lower()}%"
+    
+    if category and category != "all":
+        products = query_db(
+            """SELECT p.*, s.business_name as seller_name, s.rating as seller_rating 
+               FROM products p
+               LEFT JOIN sellers s ON p.seller_id = s.id
+               WHERE (LOWER(p.name) LIKE ? OR LOWER(p.category) LIKE ?) AND LOWER(p.category) = ?""",
+            (query_str, query_str, category.lower())
+        )
     else:
-        products = Product.get_all()
+        products = query_db(
+            """SELECT p.*, s.business_name as seller_name, s.rating as seller_rating 
+               FROM products p
+               LEFT JOIN sellers s ON p.seller_id = s.id
+               WHERE LOWER(p.name) LIKE ? OR LOWER(p.category) LIKE ?""",
+            (query_str, query_str)
+        )
 
-    for p in products:
-        dist = calculate_distance_km(pincode, p.get('seller_pincode', '560034'))
-        p['distance_km'] = dist
-        p['distance_label'] = f"📍 {dist} km away"
+    return {"status": "success", "count": len(products), "products": products}
 
-    # Sort nearby products first
-    products.sort(key=lambda x: x['distance_km'])
-
-    return jsonify(products), 200
-
-@products_bp.route('/api/products/<int:product_id>', methods=['GET'])
-def get_product_details(product_id):
-    product = Product.find_by_id(product_id)
+@router.get("/{product_id}")
+def get_product_details(product_id: int):
+    product = query_db(
+        """SELECT p.*, s.business_name as seller_name, s.rating as seller_rating, s.location as seller_location
+           FROM products p
+           LEFT JOIN sellers s ON p.seller_id = s.id
+           WHERE p.id = ?""",
+        (product_id,),
+        one=True
+    )
     if not product:
-        return jsonify({'error': 'Product not found'}), 404
+        raise HTTPException(status_code=404, detail="Product not found.")
+    return {"status": "success", "product": product}
 
-    pincode = session.get('localkart_pincode') or '560034'
-    dist = calculate_distance_km(pincode, product.get('seller_pincode', '560034'))
-    product['distance_km'] = dist
-    product['distance_label'] = f"📍 {dist} km away"
+@router.post("", dependencies=[Depends(require_seller)])
+def create_product(payload: ProductCreateSchema, current_user: dict = Depends(get_current_user)):
+    seller = query_db("SELECT * FROM sellers WHERE user_id = ?", (current_user["id"],), one=True)
+    if not seller:
+        raise HTTPException(status_code=400, detail="Seller account not registered.")
 
-    return jsonify(product), 200
+    new_id = execute_db(
+        """INSERT INTO products (seller_id, name, price, original_price, category, quantity, description, image, is_handmade, prep_time, material)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (seller["id"], payload.name, payload.price, payload.original_price or (payload.price + 50), payload.category, payload.quantity or 10, payload.description or "", payload.image or "", 1 if payload.is_handmade else 0, payload.prep_time or "Ready to Ship", payload.material or "")
+    )
 
-@products_bp.route('/api/products/search', methods=['GET'])
-def search_products():
-    query = request.args.get('q', '').strip()
-    pincode = request.args.get('pincode') or session.get('localkart_pincode') or '560034'
-
-    if not query:
-        products = Product.get_all()
-    else:
-        products = Product.search(query)
-
-    for p in products:
-        dist = calculate_distance_km(pincode, p.get('seller_pincode', '560034'))
-        p['distance_km'] = dist
-        p['distance_label'] = f"📍 {dist} km away"
-
-    products.sort(key=lambda x: x['distance_km'])
-
-    return jsonify(products), 200
-
-@products_bp.route('/api/products', methods=['POST'])
-def create_product():
-    seller_id = session.get('seller_id')
-    if not seller_id:
-        return jsonify({'error': 'Unauthorized. Only logged-in sellers can create products.'}), 403
-
-    data = request.get_json() or {}
-    name = data.get('name')
-    price = data.get('price')
-    category = data.get('category', 'Handmade')
-    description = data.get('description', '')
-    quantity = int(data.get('quantity', 10))
-    image = data.get('image', 'https://images.unsplash.com/photo-1612196808214-b7e239e5f6b7?w=800&auto=format&fit=crop&q=80')
-
-    if not name or not price:
-        return jsonify({'error': 'Product name and price are required'}), 400
-
-    product = Product.create(seller_id, name, description, float(price), category, quantity, image)
-    return jsonify({'message': 'Product created successfully', 'product': product}), 201
+    created = query_db("SELECT * FROM products WHERE id = ?", (new_id,), one=True)
+    return {"status": "success", "message": "Product created successfully", "product": created}

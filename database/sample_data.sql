@@ -34,7 +34,7 @@ INSERT INTO delivery_partners (user_id, name, phone, location, pincode, availabl
 (6, 'Ramesh Express', '+91 98888 22222', 'Koramangala, Bengaluru', '560034', TRUE, 8, 24, 1920.00);
 
 INSERT INTO products (seller_id, name, description, price, category, quantity, image, delivery_available, pickup_available) VALUES
-(1, 'Handmade Terracotta Vase', 'Beautiful hand-painted terracotta vase crafted by local clay artisans in Koramangala. Ideal for dry flowers.', 450.00, 'Handmade', 8, 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=800&auto=format&fit=crop&q=80', TRUE, TRUE),
+(1, 'Handmade Terracotta Vase', 'Beautiful hand-painted terracotta vase crafted by local clay artisans in Koramangala. Ideal for dry flowers.', 450.00, 'Handmade', 8, 'https://images.unsplash.com/photo-1612196808214-b7e239e5f6b7?w=800&auto=format&fit=crop&q=80', TRUE, TRUE),
 (1, 'Handcrafted Bamboo Basket', 'Eco-friendly handwoven natural bamboo storage basket suitable for fruits, towels, or home organization.', 299.00, 'Handmade', 14, 'https://images.unsplash.com/photo-1590794056226-79ef3a8147e1?w=800&auto=format&fit=crop&q=80', TRUE, TRUE),
 (2, 'Homemade Mango Pickle (500g)', 'Traditional home-style raw mango achaar made with cold-pressed mustard oil and aromatic spices.', 180.00, 'Food', 20, 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=800&auto=format&fit=crop&q=80', TRUE, TRUE),
 (3, 'Pure Raw Wildflower Honey (500g)', '100% pure unprocessed wildflower honey harvested ethically from local farm hives near HSR Layout.', 350.00, 'Farm Products', 15, 'https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=800&auto=format&fit=crop&q=80', TRUE, TRUE),

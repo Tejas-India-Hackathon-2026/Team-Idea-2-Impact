@@ -122,11 +122,12 @@ export const CustomerSearchView: React.FC = () => {
                 key={product.id}
                 className="bg-slate-800/90 border border-slate-700/60 rounded-2xl overflow-hidden shadow-lg hover:border-emerald-500/50 transition-all flex flex-col group"
               >
-                <div className="relative aspect-square overflow-hidden bg-slate-950">
+                <div className="relative h-44 flex items-center justify-center overflow-hidden bg-slate-950 p-2">
                   <img
                     src={product.images[0]}
                     alt={product.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1612196808214-b7e239e5f6b7?w=800&auto=format&fit=crop&q=80'; }}
+                    className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
                   />
                   <button
                     onClick={() => toggleWishlist(product.id)}

@@ -69,74 +69,44 @@ export const ProfileView: React.FC = () => {
         </div>
       </div>
 
-      {/* SECTION 7: SUBTLE SELLER & DELIVERY REGISTRATION ENTRY POINTS */}
-      <div className="bg-slate-800/90 border border-slate-700/80 rounded-3xl p-5 shadow-xl mb-6 space-y-3">
-        <h3 className="text-xs uppercase font-extrabold text-slate-400 tracking-wider mb-2">Partner Options</h3>
+      {/* PARTNER PORTALS (VISIBLE ONLY TO USERS HOLDING SELLER / DELIVERY ROLES) */}
+      {(user.roles.includes('seller') || user.roles.includes('delivery')) && (
+        <div className="bg-slate-800/90 border border-slate-700/80 rounded-3xl p-5 shadow-xl mb-6 space-y-3">
+          <h3 className="text-xs uppercase font-extrabold text-slate-400 tracking-wider mb-2">Switch Portal</h3>
 
-        {!user.roles.includes('seller') ? (
-          <div
-            onClick={() => setActiveScreen('seller_registration')}
-            className="p-4 bg-slate-900/80 hover:bg-slate-900 border border-amber-500/30 rounded-2xl cursor-pointer flex items-center justify-between group transition-all"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-                <Store className="w-5 h-5" />
+          {user.roles.includes('seller') && (
+            <div
+              onClick={() => switchUserRole('seller')}
+              className="p-4 bg-amber-950/40 border border-amber-500/40 rounded-2xl cursor-pointer flex items-center justify-between group transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <Store className="w-5 h-5 text-amber-400" />
+                <div>
+                  <h4 className="font-bold text-sm text-amber-300">Open Seller Dashboard</h4>
+                  <p className="text-xs text-slate-400">Manage products, orders & store inventory</p>
+                </div>
               </div>
-              <div>
-                <h4 className="font-bold text-sm text-white group-hover:text-amber-400 transition-colors">Become a Seller</h4>
-                <p className="text-xs text-slate-400">Register store to sell products locally</p>
-              </div>
+              <ChevronRight className="w-5 h-5 text-amber-400" />
             </div>
-            <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-amber-400 transition-colors" />
-          </div>
-        ) : (
-          <div
-            onClick={() => switchUserRole('seller')}
-            className="p-4 bg-amber-950/40 border border-amber-500/40 rounded-2xl cursor-pointer flex items-center justify-between group transition-all"
-          >
-            <div className="flex items-center gap-3">
-              <Store className="w-5 h-5 text-amber-400" />
-              <div>
-                <h4 className="font-bold text-sm text-amber-300">Open Seller Dashboard</h4>
-                <p className="text-xs text-slate-400">Manage products, orders & store inventory</p>
-              </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-amber-400" />
-          </div>
-        )}
+          )}
 
-        {!user.roles.includes('delivery') ? (
-          <div
-            onClick={() => setActiveScreen('delivery_registration')}
-            className="p-4 bg-slate-900/80 hover:bg-slate-900 border border-blue-500/30 rounded-2xl cursor-pointer flex items-center justify-between group transition-all"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-                <Truck className="w-5 h-5" />
+          {user.roles.includes('delivery') && (
+            <div
+              onClick={() => switchUserRole('delivery')}
+              className="p-4 bg-blue-950/40 border border-blue-500/40 rounded-2xl cursor-pointer flex items-center justify-between group transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <Truck className="w-5 h-5 text-blue-400" />
+                <div>
+                  <h4 className="font-bold text-sm text-blue-300">Open Delivery Dashboard</h4>
+                  <p className="text-xs text-slate-400">View available deliveries & trip earnings</p>
+                </div>
               </div>
-              <div>
-                <h4 className="font-bold text-sm text-white group-hover:text-blue-400 transition-colors">Become a Delivery Partner</h4>
-                <p className="text-xs text-slate-400">Deliver local packages in your area</p>
-              </div>
+              <ChevronRight className="w-5 h-5 text-blue-400" />
             </div>
-            <ChevronRight className="w-5 h-5 text-slate-500 group-hover:text-blue-400 transition-colors" />
-          </div>
-        ) : (
-          <div
-            onClick={() => switchUserRole('delivery')}
-            className="p-4 bg-blue-950/40 border border-blue-500/40 rounded-2xl cursor-pointer flex items-center justify-between group transition-all"
-          >
-            <div className="flex items-center gap-3">
-              <Truck className="w-5 h-5 text-blue-400" />
-              <div>
-                <h4 className="font-bold text-sm text-blue-300">Open Delivery Dashboard</h4>
-                <p className="text-xs text-slate-400">View available deliveries & trip earnings</p>
-              </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-blue-400" />
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Logout Action */}
       <button

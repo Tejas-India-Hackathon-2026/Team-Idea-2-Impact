@@ -95,7 +95,7 @@ export const SellerPortalView: React.FC = () => {
         <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <h2 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-dark)' }}>Recent Customer Orders</h2>
           {orders.map(ord => (
-            <div key={ord.id} style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div key={ord.id} style={{ border: '1px solid var(--border-color)', borderRadius: '8px', padding: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
               <div>
                 <strong>Order #{ord.id}</strong>
                 <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Total: ₹{ord.total} | Status: {ord.status}</div>

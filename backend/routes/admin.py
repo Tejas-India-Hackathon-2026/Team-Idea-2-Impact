@@ -1,175 +1,116 @@
-# LocalKart Complete Admin Management Blueprint
-from flask import Blueprint, request, jsonify, session
+# LocalKart Production Admin Portal API Router
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from typing import Optional, List
+
 from backend.database import query_db, execute_db
+from backend.dependencies import get_current_user, require_admin
 
-admin_bp = Blueprint('admin', __name__)
+router = APIRouter(prefix="/api/admin", tags=["Admin Portal"], dependencies=[Depends(require_admin)])
 
-def is_admin():
-    """Security check ensuring caller is authenticated as Admin."""
-    return session.get('user_role') == 'admin' or True # Enabled for admin testing
+class ActionReasonSchema(BaseModel):
+    reason: Optional[str] = ""
 
-@admin_bp.route('/api/admin/dashboard', methods=['GET'])
-@admin_bp.route('/api/admin/stats', methods=['GET'])
-def get_admin_dashboard_stats():
-    """GET /api/admin/dashboard — Summary KPI metrics for Admin Dashboard."""
-    if not is_admin():
-        return jsonify({'error': 'Unauthorized access. Admin role required.'}), 403
+@router.get("/overview")
+def get_admin_overview():
+    """
+    Returns platform key metrics for admin overview dashboard.
+    """
+    users_count = len(query_db("SELECT id FROM users"))
+    sellers_count = len(query_db("SELECT id FROM sellers"))
+    pending_sellers = len(query_db("SELECT id FROM sellers WHERE approval_status = 'Pending'"))
+    verified_sellers = len(query_db("SELECT id FROM sellers WHERE verified = 1 OR approval_status = 'Approved'"))
+    delivery_count = len(query_db("SELECT id FROM delivery_partners"))
+    orders_count = len(query_db("SELECT id FROM orders"))
+    products_count = len(query_db("SELECT id FROM products"))
+    complaints_count = len(query_db("SELECT id FROM complaints WHERE status = 'Open'"))
 
-    u_count = query_db("SELECT COUNT(*) AS count FROM users", one=True)['count']
-    s_count = query_db("SELECT COUNT(*) AS count FROM sellers", one=True)['count']
-    p_count = query_db("SELECT COUNT(*) AS count FROM products", one=True)['count']
-    o_count = query_db("SELECT COUNT(*) AS count FROM orders", one=True)['count']
-    d_count = query_db("SELECT COUNT(*) AS count FROM orders WHERE status IN ('Accepted', 'Preparing', 'Ready', 'Out for Delivery')", one=True)['count']
-    rev_res = query_db("SELECT SUM(total_amount) AS total FROM orders WHERE status != 'Cancelled'", one=True)
-    total_rev = float(rev_res['total']) if rev_res and rev_res['total'] else 0.0
+    return {
+        "status": "success",
+        "metrics": {
+            "total_users": users_count,
+            "total_sellers": sellers_count,
+            "pending_sellers": pending_sellers,
+            "verified_sellers": verified_sellers,
+            "delivery_partners": delivery_count,
+            "total_orders": orders_count,
+            "total_products": products_count,
+            "open_complaints": complaints_count
+        }
+    }
 
-    return jsonify({
-        'total_users': u_count,
-        'total_sellers': s_count,
-        'total_products': p_count,
-        'total_orders': o_count,
-        'active_deliveries': d_count,
-        'total_revenue': total_rev
-    }), 200
+@router.get("/users")
+def get_all_users():
+    users = query_db("SELECT id, firebase_uid, name, email, phone, role, status, pincode, city, state, created_at FROM users ORDER BY created_at DESC")
+    return {"status": "success", "count": len(users), "users": users}
 
-# USER MANAGEMENT
-@admin_bp.route('/api/admin/users', methods=['GET'])
-def get_admin_users():
-    """GET /api/admin/users — List all registered users (passwords omitted)."""
-    users = query_db("SELECT id, name, email, phone, role, created_at FROM users ORDER BY id ASC")
-    return jsonify(users), 200
+@router.get("/sellers")
+def get_all_sellers(status_filter: Optional[str] = None):
+    if status_filter:
+        sellers = query_db(
+            "SELECT s.*, u.name as owner_name, u.phone as owner_phone, u.email as owner_email FROM sellers s JOIN users u ON s.user_id = u.id WHERE s.approval_status = ? ORDER BY s.created_at DESC",
+            (status_filter,)
+        )
+    else:
+        sellers = query_db(
+            "SELECT s.*, u.name as owner_name, u.phone as owner_phone, u.email as owner_email FROM sellers s JOIN users u ON s.user_id = u.id ORDER BY s.created_at DESC"
+        )
+    return {"status": "success", "count": len(sellers), "sellers": sellers}
 
-@admin_bp.route('/api/admin/users/<int:user_id>/status', methods=['PUT'])
-def update_user_status(user_id):
-    """PUT /api/admin/users/<id>/status — Activate or deactivate user."""
-    data = request.get_json() or {}
-    status = data.get('status', 'active')
-    return jsonify({'message': f'User status updated to {status}'}), 200
+@router.post("/sellers/{seller_id}/approve")
+def approve_seller(seller_id: int):
+    """
+    Approves seller application, assigns ✓ Verified Seller badge, and sends seller notification.
+    """
+    seller = query_db("SELECT * FROM sellers WHERE id = ?", (seller_id,), one=True)
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller not found.")
 
-# SELLER MANAGEMENT
-@admin_bp.route('/api/admin/sellers', methods=['GET'])
-def get_admin_sellers():
-    """GET /api/admin/sellers — Returns sellers list with verification status."""
-    sellers = query_db("""
-        SELECT s.*, u.name AS owner_name, u.email AS owner_email, u.phone AS owner_phone
-        FROM sellers s
-        JOIN users u ON s.user_id = u.id
-        ORDER BY s.id ASC
-    """)
-    return jsonify(sellers), 200
+    execute_db("UPDATE sellers SET approval_status = 'Approved', verified = 1 WHERE id = ?", (seller_id,))
+    
+    # Send seller notification
+    execute_db(
+        """INSERT INTO notifications (user_id, title, message, type)
+           VALUES (?, 'Seller Application Approved!', ?, 'seller')""",
+        (seller["user_id"], f"Congratulations! Your seller application for '{seller['business_name']}' has been approved with a ✓ Verified Seller badge.")
+    )
 
-@admin_bp.route('/api/admin/sellers/<int:seller_id>/verify', methods=['PUT'])
-def verify_seller(seller_id):
-    """PUT /api/admin/sellers/<seller_id>/verify — Verify or reject seller."""
-    data = request.get_json() or {}
-    status = bool(data.get('verified', True))
+    updated_seller = query_db("SELECT * FROM sellers WHERE id = ?", (seller_id,), one=True)
+    return {"status": "success", "message": f"Seller '{seller['business_name']}' approved successfully!", "seller": updated_seller}
 
-    execute_db("UPDATE sellers SET verified = ? WHERE id = ?", (1 if status else 0, seller_id))
-    return jsonify({
-        'message': f"Seller {'Verified' if status else 'Rejected'} successfully",
-        'seller': {'id': seller_id, 'verified': status}
-    }), 200
+@router.post("/sellers/{seller_id}/reject")
+def reject_seller(seller_id: int, payload: ActionReasonSchema):
+    seller = query_db("SELECT * FROM sellers WHERE id = ?", (seller_id,), one=True)
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller not found.")
 
-# PRODUCT MANAGEMENT
-@admin_bp.route('/api/admin/products', methods=['GET'])
-def get_admin_products():
-    """GET /api/admin/products — Returns list of all products."""
-    products = query_db("""
-        SELECT p.*, s.business_name AS seller_name
-        FROM products p
-        JOIN sellers s ON p.seller_id = s.id
-        ORDER BY p.id ASC
-    """)
-    return jsonify(products), 200
+    execute_db("UPDATE sellers SET approval_status = 'Rejected', verified = 0 WHERE id = ?", (seller_id,))
+    
+    execute_db(
+        """INSERT INTO notifications (user_id, title, message, type)
+           VALUES (?, 'Seller Application Notice', ?, 'seller')""",
+        (seller["user_id"], f"Your seller application for '{seller['business_name']}' was not approved. Reason: {payload.reason or 'Document verification incomplete.'}")
+    )
 
-@admin_bp.route('/api/admin/products/<int:product_id>', methods=['DELETE'])
-def delete_admin_product(product_id):
-    """DELETE /api/admin/products/<id> — Admin removes inappropriate product."""
-    execute_db("DELETE FROM products WHERE id = ?", (product_id,))
-    return jsonify({'message': 'Product removed successfully'}), 200
+    return {"status": "success", "message": "Seller application marked as rejected."}
 
-# ORDER MANAGEMENT
-@admin_bp.route('/api/admin/orders', methods=['GET'])
-def get_admin_orders():
-    """GET /api/admin/orders — Monitor all platform orders."""
-    orders = query_db("""
-        SELECT o.*, u.name AS customer_name, s.business_name AS seller_name, p.payment_status
-        FROM orders o
-        JOIN users u ON o.customer_id = u.id
-        JOIN sellers s ON o.seller_id = s.id
-        LEFT JOIN payments p ON p.order_id = o.id
-        ORDER BY o.id DESC
-    """)
-    return jsonify(orders), 200
+@router.post("/sellers/{seller_id}/suspend")
+def suspend_seller(seller_id: int, payload: ActionReasonSchema):
+    seller = query_db("SELECT * FROM sellers WHERE id = ?", (seller_id,), one=True)
+    if not seller:
+        raise HTTPException(status_code=404, detail="Seller not found.")
 
-# DELIVERY MANAGEMENT
-@admin_bp.route('/api/admin/deliveries', methods=['GET'])
-def get_admin_deliveries():
-    """GET /api/admin/deliveries — Monitor delivery partner assignments."""
-    deliveries = query_db("""
-        SELECT dr.*, dp.name AS partner_name, o.address AS customer_address
-        FROM delivery_requests dr
-        LEFT JOIN delivery_partners dp ON dr.delivery_partner_id = dp.id
-        JOIN orders o ON dr.order_id = o.id
-        ORDER BY dr.id DESC
-    """)
-    return jsonify(deliveries), 200
+    execute_db("UPDATE sellers SET approval_status = 'Suspended', verified = 0 WHERE id = ?", (seller_id,))
+    
+    execute_db(
+        """INSERT INTO notifications (user_id, title, message, type)
+           VALUES (?, 'Seller Account Suspended', ?, 'seller')""",
+        (seller["user_id"], f"Your seller account '{seller['business_name']}' has been suspended due to platform policy review.")
+    )
 
-# PAYMENT MANAGEMENT
-@admin_bp.route('/api/admin/payments', methods=['GET'])
-def get_admin_payments():
-    """GET /api/admin/payments — Monitor platform payments."""
-    payments = query_db("""
-        SELECT p.*, u.name AS customer_name, o.total_amount
-        FROM payments p
-        JOIN users u ON p.customer_id = u.id
-        JOIN orders o ON p.order_id = o.id
-        ORDER BY p.id DESC
-    """)
-    return jsonify(payments), 200
+    return {"status": "success", "message": "Seller account suspended."}
 
-# REVIEW MANAGEMENT
-@admin_bp.route('/api/admin/reviews', methods=['GET'])
-def get_admin_reviews():
-    """GET /api/admin/reviews — Monitor customer reviews."""
-    reviews = query_db("""
-        SELECT r.*, u.name AS customer_name, p.name AS product_name, s.business_name AS seller_name
-        FROM reviews r
-        JOIN users u ON r.customer_id = u.id
-        JOIN products p ON r.product_id = p.id
-        JOIN sellers s ON r.seller_id = s.id
-        ORDER BY r.id DESC
-    """)
-    return jsonify(reviews), 200
-
-@admin_bp.route('/api/admin/reviews/<int:review_id>', methods=['DELETE'])
-def delete_admin_review(review_id):
-    """DELETE /api/admin/reviews/<id> — Delete abusive or inappropriate review."""
-    execute_db("DELETE FROM reviews WHERE id = ?", (review_id,))
-    return jsonify({'message': 'Review deleted successfully'}), 200
-
-# REPORTS ANALYTICS
-@admin_bp.route('/api/admin/reports', methods=['GET'])
-def get_admin_reports():
-    """GET /api/admin/reports — Sales, Revenue, Seller & Category analytics."""
-    orders_res = query_db("SELECT COUNT(*) AS total_orders, SUM(total_amount) AS total_revenue FROM orders", one=True)
-    sellers_res = query_db("SELECT COUNT(*) AS total, SUM(CASE WHEN verified = 1 THEN 1 ELSE 0 END) AS verified FROM sellers", one=True)
-    categories = query_db("SELECT category, COUNT(*) AS count FROM products GROUP BY category")
-
-    return jsonify({
-        'sales': {
-            'today_orders': orders_res['total_orders'] or 0,
-            'weekly_orders': orders_res['total_orders'] or 0,
-            'monthly_orders': orders_res['total_orders'] or 0
-        },
-        'revenue': {
-            'today_revenue': float(orders_res['total_revenue'] or 0),
-            'weekly_revenue': float(orders_res['total_revenue'] or 0),
-            'monthly_revenue': float(orders_res['total_revenue'] or 0)
-        },
-        'sellers': {
-            'total_sellers': sellers_res['total'] or 0,
-            'verified_sellers': sellers_res['verified'] or 0
-        },
-        'popular_categories': categories
-    }), 200
+@router.get("/notifications")
+def get_admin_notifications():
+    notifications = query_db("SELECT * FROM notifications ORDER BY created_at DESC LIMIT 50")
+    return {"status": "success", "count": len(notifications), "notifications": notifications}

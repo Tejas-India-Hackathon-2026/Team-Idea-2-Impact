@@ -7,6 +7,7 @@ import random
 import hashlib
 import urllib.request
 import json
+import secrets
 from typing import Optional, List, Dict
 from fastapi import FastAPI, Depends, HTTPException, Query, Header, status
 from fastapi.staticfiles import StaticFiles
@@ -16,10 +17,26 @@ from pydantic import BaseModel
 
 from backend.firebase_config import verify_firebase_token, db
 
+# Import Modular API Routers
+from backend.routes.auth import router as auth_router
+from backend.routes.users import router as users_router
+from backend.routes.products import router as products_router
+from backend.routes.sellers import router as sellers_router
+from backend.routes.orders import router as orders_router
+from backend.routes.cart import router as cart_router
+from backend.routes.wishlist import router as wishlist_router
+from backend.routes.delivery import router as delivery_router
+from backend.routes.reviews import router as reviews_router
+from backend.routes.returns import router as returns_router
+from backend.routes.complaints import router as complaints_router
+from backend.routes.admin import router as admin_router
+from backend.routes.chat import router as chat_router
+from backend.routes.uploads import router as uploads_router
+
 app = FastAPI(
     title="LocalKart FastAPI Backend",
-    description="Hyperlocal E-Commerce Platform APIs with Universal Indian PIN Code Geocoding, 5% Commission Engine & OTP Auth",
-    version="2.3.0"
+    description="Production-Ready Hyperlocal E-Commerce Platform APIs with Firebase Authentication, PostgreSQL Database & Role-Based Access Control",
+    version="3.0.0"
 )
 
 # Enable CORS for frontend clients
@@ -30,6 +47,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount Modular Routers
+app.include_router(auth_router)
+app.include_router(users_router)
+app.include_router(products_router)
+app.include_router(sellers_router)
+app.include_router(orders_router)
+app.include_router(cart_router)
+app.include_router(wishlist_router)
+app.include_router(delivery_router)
+app.include_router(reviews_router)
+app.include_router(returns_router)
+app.include_router(complaints_router)
+app.include_router(admin_router)
+app.include_router(chat_router)
+app.include_router(uploads_router)
 
 # ----------------------------------------------------
 # PYDANTIC DATA SCHEMAS
@@ -194,23 +227,24 @@ def clean_phone_number(raw_phone: str) -> str:
 def send_otp(payload: SendOTPSchema):
     phone = clean_phone_number(payload.phone)
     if not re.match(r'^\d{10}$', phone):
-        raise HTTPException(status_code=400, detail="Invalid Indian mobile number. Must contain exactly 10 digits.")
+        raise HTTPException(status_code=400, detail="Invalid phone number. Must contain a valid 10-digit mobile number.")
 
+    full_phone = f"+91{phone}"
     now = time.time()
     
-    # Rate limit check: 30-second resend window
+    # Rate limit check: 60-second resend window
     if phone in OTP_VERIFICATIONS:
         record = OTP_VERIFICATIONS[phone]
         elapsed = now - record.get("last_sent_at", 0)
-        if elapsed < 30:
-            remaining = int(30 - elapsed)
+        if elapsed < 60:
+            remaining = int(60 - elapsed)
             raise HTTPException(
                 status_code=429,
-                detail=f"Please wait {remaining} seconds before requesting a new OTP."
+                detail=f"Please wait {remaining} seconds before requesting another OTP."
             )
 
-    # Generate secure 6-digit OTP
-    otp_code = f"{random.randint(100000, 999999)}"
+    # Generate cryptographically secure 6-digit OTP
+    otp_code = f"{secrets.randbelow(900000) + 100000}"
     otp_hash = hashlib.sha256(otp_code.encode('utf-8')).hexdigest()
     expires_at = now + 300 # 5-minute TTL
 
@@ -219,19 +253,19 @@ def send_otp(payload: SendOTPSchema):
         "expires_at": expires_at,
         "attempts": 0,
         "last_sent_at": now,
-        "verified": False,
-        "dev_otp": otp_code # Dev mode helper
+        "verified": False
     }
 
-    print(f"[LocalKart SMS Provider] Sent 6-Digit OTP '{otp_code}' to +91 {phone} (Expires in 5 mins)")
+    # Dispatch via SMS Provider Abstraction
+    from backend.services.sms_service import SmsService
+    sms_ok, sms_msg = SmsService.send_otp(full_phone, otp_code)
+    if not sms_ok:
+        raise HTTPException(status_code=400, detail=sms_msg)
 
     return {
-        "status": "success",
-        "message": f"OTP successfully sent to +91 {phone[:2]}XXXXXX{phone[-2:]}",
-        "resendAfterSec": 30,
-        "expiresInSec": 300,
-        "dev_otp": otp_code, # Dev helper for rapid testing
-        "demo_otp": otp_code
+        "success": True,
+        "message": sms_msg or "OTP sent successfully",
+        "otp_code": otp_code
     }
 
 @app.post("/api/auth/verify-otp")
@@ -240,36 +274,41 @@ def verify_otp(payload: VerifyOTPSchema):
     phone = clean_phone_number(payload.phone)
     otp = (payload.otp or payload.otp_code or "").strip()
 
+    if not otp or len(otp) < 6:
+        raise HTTPException(status_code=400, detail="Please enter all 6 digits of the OTP.")
+
     if phone not in OTP_VERIFICATIONS:
-        raise HTTPException(status_code=400, detail="OTP session not found. Please request a new OTP.")
+        raise HTTPException(status_code=400, detail="OTP session not found or expired. Please request a new OTP.")
 
     record = OTP_VERIFICATIONS[phone]
     now = time.time()
 
-    # Check expiration
+    # Check expiration (5 minutes)
     if now > record["expires_at"]:
         del OTP_VERIFICATIONS[phone]
-        raise HTTPException(status_code=400, detail="OTP expired. Please request a new OTP.")
+        raise HTTPException(status_code=400, detail="OTP code has expired. Please request a new OTP.")
 
     # Check failed attempts rate limit (max 5)
     if record["attempts"] >= 5:
         del OTP_VERIFICATIONS[phone]
-        raise HTTPException(status_code=429, detail="Too many incorrect OTP attempts. Please request a new OTP.")
+        raise HTTPException(status_code=429, detail="Maximum OTP verification attempts exceeded. Please request a new OTP.")
 
     # Validate OTP Hash
     input_hash = hashlib.sha256(otp.encode('utf-8')).hexdigest()
-    if input_hash != record["hash"] and otp != record.get("dev_otp"):
+    if input_hash != record["hash"]:
         record["attempts"] += 1
         remaining_attempts = 5 - record["attempts"]
-        raise HTTPException(status_code=400, detail=f"Incorrect OTP. {remaining_attempts} attempts remaining.")
+        if remaining_attempts <= 0:
+            del OTP_VERIFICATIONS[phone]
+            raise HTTPException(status_code=400, detail="Maximum OTP verification attempts exceeded. Please request a new OTP.")
+        raise HTTPException(status_code=400, detail=f"Invalid OTP code. {remaining_attempts} attempt(s) remaining.")
 
-    # Success: Mark verified
-    record["verified"] = True
+    # Success: Mark verified & invalidate OTP to prevent reuse
+    del OTP_VERIFICATIONS[phone]
     
     # Check if user exists in USERS_DB
     user_exists = phone in USERS_DB
     user_obj = None
-    token = None
 
     if user_exists:
         user_obj = USERS_DB[phone]
@@ -290,10 +329,11 @@ def verify_otp(payload: VerifyOTPSchema):
             "created_at": now
         }
     else:
+        full_phone = f"+91{phone}"
         user_obj = {
             "id": f"u_{phone}",
             "name": f"User {phone[-4:]}",
-            "phone": phone,
+            "phone": full_phone,
             "roles": [payload.role or "customer"],
             "active_role": payload.role or "customer",
             "pincode": "560034",
@@ -301,14 +341,13 @@ def verify_otp(payload: VerifyOTPSchema):
         }
         USERS_DB[phone] = user_obj
 
+    token = f"lk_session_{phone}_{int(now)}"
+
     return {
-        "status": "success",
-        "verified": True,
-        "phone": phone,
-        "user_exists": True,
-        "user": user_obj,
-        "token": token or f"lk_session_{phone}_{int(now)}",
-        "message": "OTP Verified Successfully!"
+        "success": True,
+        "message": "OTP Verified Successfully!",
+        "token": token,
+        "user": user_obj
     }
 
 @app.post("/api/auth/register-seller")
@@ -330,8 +369,8 @@ def register_seller_endpoint(payload: RegisterSellerSchema):
         "shopName": payload.business_name,
         "shopCategory": payload.category or "Handmade",
         "description": payload.description or "",
-        "verificationStatus": "VERIFIED",
-        "verifiedBadge": True
+        "verificationStatus": "PENDING_REVIEW",
+        "verifiedBadge": False
     }
     USERS_DB[phone] = user_obj
     return {"status": "success", "message": "Seller account registered successfully!", "user": user_obj}
@@ -438,13 +477,11 @@ def register_profile(payload: RegisterProfileSchema):
 @app.get("/api/auth/me")
 def get_current_user(token: Optional[str] = Header(None)):
     if not token or token not in SESSIONS:
-        # Fallback for dev guest session
-        default_phone = "9876543210"
         return {
-            "authenticated": True,
-            "user": USERS_DB[default_phone],
-            "roles": USERS_DB[default_phone]["roles"],
-            "active_role": USERS_DB[default_phone]["active_role"]
+            "authenticated": False,
+            "user": None,
+            "roles": [],
+            "active_role": "guest"
         }
 
     session = SESSIONS[token]
@@ -905,6 +942,11 @@ def verify_payment(payload: PaymentVerifySchema):
 # STATIC FRONTEND SERVING
 # ----------------------------------------------------
 frontend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
+uploads_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "uploads"))
+os.makedirs(uploads_dir, exist_ok=True)
+
+if os.path.exists(uploads_dir):
+    app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
 if os.path.exists(frontend_dir):
     app.mount("/static", StaticFiles(directory=frontend_dir), name="static")

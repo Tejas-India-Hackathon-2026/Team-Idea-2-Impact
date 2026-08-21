@@ -75,11 +75,11 @@ export const DeliveryNavigation: React.FC = () => {
         </div>
       </header>
 
-      {/* MOBILE DELIVERY PARTNER BOTTOM NAVIGATION (Section 16: Home | Deliveries | Search | Earnings | Profile) */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-800 py-2 px-3 flex items-center justify-around font-sans">
+      {/* MOBILE DELIVERY PARTNER BOTTOM NAVIGATION (Home | Deliveries | Earnings | History | Profile) */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-800 py-1.5 px-3 flex items-center justify-around font-sans">
         <button
           onClick={() => setActiveScreen('delivery_dashboard')}
-          className={`flex flex-col items-center gap-1 text-[11px] font-semibold ${
+          className={`flex flex-col items-center justify-center min-h-[44px] px-2 gap-1 text-[11px] font-semibold transition-colors ${
             activeScreen === 'delivery_dashboard' ? 'text-blue-400' : 'text-slate-400'
           }`}
         >
@@ -89,7 +89,7 @@ export const DeliveryNavigation: React.FC = () => {
 
         <button
           onClick={() => setActiveScreen('delivery_available')}
-          className={`flex flex-col items-center gap-1 text-[11px] font-semibold ${
+          className={`flex flex-col items-center justify-center min-h-[44px] px-2 gap-1 text-[11px] font-semibold transition-colors ${
             activeScreen === 'delivery_available' || activeScreen === 'delivery_my_deliveries' ? 'text-blue-400' : 'text-slate-400'
           }`}
         >
@@ -98,18 +98,8 @@ export const DeliveryNavigation: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setActiveScreen('search')}
-          className={`flex flex-col items-center gap-1 text-[11px] font-semibold ${
-            activeScreen === 'search' ? 'text-blue-400' : 'text-slate-400'
-          }`}
-        >
-          <Search className="w-5 h-5" />
-          <span>Search</span>
-        </button>
-
-        <button
           onClick={() => setActiveScreen('delivery_earnings')}
-          className={`flex flex-col items-center gap-1 text-[11px] font-semibold ${
+          className={`flex flex-col items-center justify-center min-h-[44px] px-2 gap-1 text-[11px] font-semibold transition-colors ${
             activeScreen === 'delivery_earnings' ? 'text-blue-400' : 'text-slate-400'
           }`}
         >
@@ -118,8 +108,18 @@ export const DeliveryNavigation: React.FC = () => {
         </button>
 
         <button
+          onClick={() => setActiveScreen('delivery_history')}
+          className={`flex flex-col items-center justify-center min-h-[44px] px-2 gap-1 text-[11px] font-semibold transition-colors ${
+            activeScreen === 'delivery_history' ? 'text-blue-400' : 'text-slate-400'
+          }`}
+        >
+          <History className="w-5 h-5" />
+          <span>History</span>
+        </button>
+
+        <button
           onClick={() => setActiveScreen('delivery_profile')}
-          className={`flex flex-col items-center gap-1 text-[11px] font-semibold ${
+          className={`flex flex-col items-center justify-center min-h-[44px] px-2 gap-1 text-[11px] font-semibold transition-colors ${
             activeScreen === 'delivery_profile' ? 'text-blue-400' : 'text-slate-400'
           }`}
         >

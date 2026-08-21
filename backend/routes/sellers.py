@@ -1,42 +1,64 @@
-# LocalKart Sellers Routes Blueprint
-from flask import Blueprint, jsonify, session, request
-from backend.models.seller import Seller
-from backend.models.product import Product
-from backend.routes.auth import role_required
+# LocalKart Sellers API Router
+from fastapi import APIRouter, HTTPException, Depends, status
+from pydantic import BaseModel
+from typing import Optional
 
-sellers_bp = Blueprint('sellers', __name__)
+from backend.database import query_db, execute_db
+from backend.dependencies import get_current_user, require_seller
 
-@sellers_bp.route('/api/sellers', methods=['GET'])
-def get_sellers():
-    """GET /api/sellers — Get all registered sellers."""
-    sellers = Seller.get_all()
-    return jsonify(sellers), 200
+router = APIRouter(prefix="/api/sellers", tags=["Sellers"])
 
-@sellers_bp.route('/api/sellers/<int:seller_id>', methods=['GET'])
-def get_seller(seller_id):
-    """GET /api/sellers/<id> — Get seller profile."""
-    seller = Seller.find_by_id(seller_id)
+class RegisterSellerSchema(BaseModel):
+    business_name: str
+    description: Optional[str] = ""
+    pincode: str
+    location: Optional[str] = "Bengaluru"
+    self_delivery: Optional[bool] = True
+
+@router.get("")
+def list_sellers(pincode: Optional[str] = None):
+    if pincode:
+        sellers = query_db("SELECT * FROM sellers WHERE pincode = ?", (pincode,))
+    else:
+        sellers = query_db("SELECT * FROM sellers")
+    return {"status": "success", "count": len(sellers), "sellers": sellers}
+
+@router.get("/portal", dependencies=[Depends(require_seller)])
+def get_seller_portal_data(current_user: dict = Depends(get_current_user)):
+    """
+    Returns seller dashboard overview data.
+    Protected API: Customer role CANNOT access this route.
+    """
+    seller = query_db("SELECT * FROM sellers WHERE user_id = ?", (current_user["id"],), one=True)
     if not seller:
-        return jsonify({'error': 'Seller not found'}), 404
-    return jsonify(seller), 200
+        raise HTTPException(status_code=404, detail="Seller profile not found.")
 
-@sellers_bp.route('/api/sellers/<int:seller_id>/products', methods=['GET'])
-def get_seller_products(seller_id):
-    """GET /api/sellers/<id>/products — Get products belonging to a seller."""
-    seller = Seller.find_by_id(seller_id)
-    if not seller:
-        return jsonify({'error': 'Seller not found'}), 404
-    products = Product.find_by_seller(seller_id)
-    return jsonify(products), 200
+    products = query_db("SELECT * FROM products WHERE seller_id = ?", (seller["id"],))
+    orders = query_db("SELECT * FROM orders WHERE seller_id = ?", (seller["id"],))
+    
+    return {
+        "status": "success",
+        "seller": seller,
+        "products_count": len(products),
+        "orders_count": len(orders),
+        "products": products,
+        "orders": orders
+    }
 
-@sellers_bp.route('/api/seller/dashboard', methods=['GET'])
-@role_required('seller', 'admin')
-def get_seller_dashboard():
-    """GET /api/seller/dashboard — Protected seller dashboard endpoint."""
-    user_id = session.get('user_id')
-    seller = Seller.find_by_user_id(user_id) if hasattr(Seller, 'find_by_user_id') else None
-    return jsonify({
-        'status': 'success',
-        'message': 'Authorized seller access granted',
-        'seller': seller
-    }), 200
+@router.post("/register")
+def register_seller(payload: RegisterSellerSchema, current_user: dict = Depends(get_current_user)):
+    existing = query_db("SELECT * FROM sellers WHERE user_id = ?", (current_user["id"],), one=True)
+    if existing:
+        return {"status": "success", "message": "Seller profile already exists.", "seller": existing}
+
+    new_id = execute_db(
+        """INSERT INTO sellers (user_id, business_name, description, location, pincode, self_delivery, approval_status)
+           VALUES (?, ?, ?, ?, ?, ?, 'Approved')""",
+        (current_user["id"], payload.business_name, payload.description or "", payload.location or "Bengaluru", payload.pincode, 1 if payload.self_delivery else 0)
+    )
+
+    # Promote user role to seller in database
+    execute_db("UPDATE users SET role = 'seller', updated_at = CURRENT_TIMESTAMP WHERE id = ?", (current_user["id"],))
+
+    seller = query_db("SELECT * FROM sellers WHERE id = ?", (new_id,), one=True)
+    return {"status": "success", "message": "Seller profile created successfully!", "seller": seller}

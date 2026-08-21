@@ -1,103 +1,149 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { ArrowLeft, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, ArrowRight, Sparkles } from 'lucide-react';
 
 export const LoginModal: React.FC = () => {
-  const { sendOtp, setActiveScreen, requestedRole, authMode } = useApp();
-  const [mobileNumber, setMobileNumber] = useState<string>('');
+  const { sendOtp, setActiveScreen, requestedRole, authMode, startLoginFlow, startSignUpFlow } = useApp();
+  const [phoneNumber, setPhoneNumber] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleaned = mobileNumber.replace(/\D/g, '');
+    const cleaned = phoneNumber.replace(/\D/g, '');
     if (cleaned.length < 10) {
-      setErrorMsg('Please enter a valid 10-digit mobile number');
+      setErrorMsg('Please enter a valid 10-digit mobile number.');
       return;
     }
     setErrorMsg(null);
-    sendOtp(`+91 ${cleaned.slice(-10)}`, requestedRole);
+    setIsLoading(true);
+    const success = await sendOtp(`+91${cleaned.slice(-10)}`, requestedRole);
+    setIsLoading(false);
+    if (!success) {
+      setErrorMsg('Failed to send OTP. Please check your phone number or connection.');
+    }
   };
 
-  const getTitle = () => {
-    if (authMode === 'login') return 'Welcome to LocalKart';
-    if (requestedRole === 'seller') return 'Seller Sign Up';
-    if (requestedRole === 'delivery') return 'Delivery Partner Sign Up';
-    return 'Customer Sign Up';
-  };
-
-  const getSubtitle = () => {
-    if (authMode === 'login') return 'Enter your mobile number to continue.';
-    if (requestedRole === 'seller') return 'Enter your mobile number to begin seller registration.';
-    if (requestedRole === 'delivery') return 'Enter your mobile number to begin delivery partner registration.';
-    return 'Enter your mobile number to create your customer account.';
-  };
-
-  const getBackTarget = () => {
-    if (authMode === 'signup') return 'role_select';
-    return 'auth_welcome';
-  };
+  const isLogin = authMode === 'login';
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0f172a', color: '#ffffff', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '24px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <div style={{ maxWidth: '440px', width: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        
-        <button
-          onClick={() => setActiveScreen(getBackTarget())}
-          className="btn btn-outline"
-          style={{ width: 'fit-content', color: '#94a3b8', borderColor: '#334155', padding: '6px 14px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
-        >
-          <ArrowLeft size={16} /> Back
-        </button>
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-4 font-sans relative overflow-y-auto box-border select-none">
+      {/* Firebase reCAPTCHA Container */}
+      <div id="recaptcha-container"></div>
 
-        <div>
-          <h2 style={{ fontSize: '28px', fontWeight: 900, color: '#ffffff', margin: '0 0 6px 0' }}>
-            {getTitle()}
-          </h2>
-          <p style={{ fontSize: '14px', color: '#94a3b8', margin: 0 }}>
-            {getSubtitle()}
-          </p>
+      {/* Subtle Background Radial Glow */}
+      <div className="absolute -top-32 -left-32 w-80 h-80 bg-teal-500/15 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute -bottom-32 -right-32 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div className="relative z-10 w-full max-w-[400px] mx-auto flex flex-col items-center justify-center my-auto transition-all box-border px-2 sm:px-0">
+        {/* Top Navigation */}
+        <div className="w-full flex items-center justify-start mb-3">
+          <button
+            onClick={() => setActiveScreen('auth_welcome')}
+            className="px-3.5 py-2 rounded-xl bg-slate-900/90 text-slate-300 hover:text-white flex items-center gap-2 text-xs sm:text-sm font-medium border border-slate-800 transition-all shadow-md active:scale-95"
+          >
+            <ArrowLeft className="w-4 h-4 text-teal-400" /> Back
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" style={{ color: '#cbd5e1', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Mobile Number
-            </label>
-            <div style={{ display: 'flex', border: '1px solid #334155', borderRadius: '12px', overflow: 'hidden', backgroundColor: '#1e293b' }}>
-              <div style={{ padding: '12px 14px', backgroundColor: '#0f172a', color: '#ffffff', fontWeight: 800, fontSize: '14px', borderRight: '1px solid #334155', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span>🇮🇳</span>
-                <span>+91</span>
-              </div>
-              <input
-                type="tel"
-                value={mobileNumber}
-                onChange={(e) => setMobileNumber(e.target.value)}
-                placeholder="Enter mobile number"
-                className="form-input"
-                style={{ border: 'none', backgroundColor: 'transparent', color: '#ffffff', fontSize: '16px', fontWeight: 700, padding: '12px 14px' }}
-                maxLength={12}
-                autoFocus
-              />
+        {/* Form Container Card */}
+        <div className="w-full bg-slate-900/95 border border-teal-500/30 rounded-2xl p-6 sm:p-7 shadow-2xl backdrop-blur-md box-border">
+          {/* Header */}
+          <div className="text-left">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-400 text-[11px] font-semibold tracking-wide uppercase mb-3">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{isLogin ? 'Welcome Back' : 'Get Started'}</span>
             </div>
-            {errorMsg && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '6px', fontWeight: 600 }}>{errorMsg}</p>}
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-[10px]">
+              {isLogin ? 'Login to LocalKart' : 'Create your account'}
+            </h2>
+            <p className="text-slate-300 text-xs sm:text-sm font-normal leading-relaxed mb-2">
+              {isLogin
+                ? 'Enter your registered phone number to receive an OTP.'
+                : 'Enter your phone number to receive a verification OTP.'}
+            </p>
           </div>
 
-          <button
-            type="submit"
-            className="btn btn-primary"
-            style={{ width: '100%', padding: '14px', fontSize: '16px', fontWeight: 800, borderRadius: '12px', boxShadow: '0 4px 14px rgba(22, 163, 74, 0.35)' }}
-          >
-            Continue
-          </button>
-        </form>
+          <form onSubmit={handleSubmit} className="pt-1">
+            <div className="mb-[12px]">
+              <label className="block text-xs font-semibold text-slate-200 uppercase tracking-wider mb-2">
+                Phone Number
+              </label>
+              <div className="flex items-center h-12 bg-slate-950 border border-teal-500/40 rounded-xl overflow-hidden focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-400/30 transition-all shadow-inner">
+                <div className="px-3.5 bg-slate-900 text-teal-400 font-bold text-xs sm:text-sm border-r border-slate-800 h-full flex items-center shrink-0 min-w-[65px] justify-center select-none">
+                  <span>+91</span>
+                </div>
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="Enter 10-digit phone number"
+                  className="w-full h-full px-4 bg-transparent text-white placeholder-slate-500 text-sm font-normal focus:outline-none tracking-wider"
+                  maxLength={10}
+                  autoFocus
+                />
+              </div>
+              {errorMsg && (
+                <p className="text-rose-400 text-xs sm:text-sm font-normal bg-rose-500/10 border border-rose-500/20 rounded-xl py-2 px-3 mt-2">
+                  {errorMsg}
+                </p>
+              )}
+            </div>
 
-        <div className="card" style={{ backgroundColor: '#1e293b', borderColor: '#334155', padding: '14px', borderRadius: '12px', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-          <ShieldCheck size={18} color="#4ade80" style={{ flexShrink: 0, marginTop: '2px' }} />
-          <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0, lineHeight: '1.5' }}>
-            By continuing, you agree to LocalKart's Terms of Service and Privacy Policy. A 6-digit OTP code will be sent to your mobile.
-          </p>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-12 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-400 hover:from-teal-400 hover:to-emerald-300 text-slate-950 font-bold text-sm sm:text-base shadow-lg shadow-teal-950/60 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 mb-[14px]"
+            >
+              {isLoading ? (
+                <span>Sending OTP...</span>
+              ) : (
+                <>
+                  <span>Send OTP</span>
+                  <ArrowRight className="w-5 h-5" />
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="text-center pt-3 border-t border-slate-800/80">
+            {isLogin ? (
+              <span className="text-xs sm:text-sm font-normal text-slate-400">
+                Don't have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    startSignUpFlow();
+                    setErrorMsg(null);
+                  }}
+                  className="text-xs sm:text-sm font-semibold text-teal-400 hover:underline ml-1"
+                >
+                  Sign Up
+                </button>
+              </span>
+            ) : (
+              <span className="text-xs sm:text-sm font-normal text-slate-400">
+                Already have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    startLoginFlow();
+                    setErrorMsg(null);
+                  }}
+                  className="text-xs sm:text-sm font-semibold text-teal-400 hover:underline ml-1"
+                >
+                  Login
+                </button>
+              </span>
+            )}
+          </div>
         </div>
 
+        {/* Security Badge */}
+        <div className="mt-1.5 flex items-center justify-center gap-2 text-xs text-slate-400">
+          <ShieldCheck className="w-4 h-4 text-teal-400 shrink-0" />
+          <span>Secure 100% Indian Hyperlocal OTP Verification</span>
+        </div>
       </div>
     </div>
   );

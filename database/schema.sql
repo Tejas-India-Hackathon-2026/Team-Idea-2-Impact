@@ -1,6 +1,8 @@
 -- LocalKart Complete Schema (PostgreSQL & SQLite Compatible)
 -- Includes Users, Sellers, Delivery Partners, Products, Orders, Order Items, Delivery Requests, Payments, Notifications, Reviews, Review Media, Review Reports, Wishlists, Followers, Customization
 
+DROP TABLE IF EXISTS messages CASCADE;
+DROP TABLE IF EXISTS conversations CASCADE;
 DROP TABLE IF EXISTS customization_requests CASCADE;
 DROP TABLE IF EXISTS seller_followers CASCADE;
 DROP TABLE IF EXISTS wishlists CASCADE;
@@ -28,17 +30,21 @@ DROP TABLE IF EXISTS users CASCADE;
 -- 1. USERS TABLE
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    email VARCHAR(120) UNIQUE NOT NULL,
-    phone VARCHAR(20) NOT NULL,
-    password VARCHAR(255) NOT NULL,
+    firebase_uid VARCHAR(128) UNIQUE,
+    phone VARCHAR(20) UNIQUE NOT NULL,
+    password VARCHAR(255),
     role VARCHAR(30) DEFAULT 'customer', -- customer, seller, delivery_partner, admin
+    name VARCHAR(100) DEFAULT '',
+    email VARCHAR(120),
+    profile_image TEXT,
+    status VARCHAR(20) DEFAULT 'active', -- active, suspended, pending
     latitude DECIMAL(9, 6),
     longitude DECIMAL(9, 6),
     pincode VARCHAR(10) DEFAULT '560034',
     city VARCHAR(100) DEFAULT 'Bengaluru',
     state VARCHAR(100) DEFAULT 'Karnataka',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 1B. USER ROLES TABLE (Allows multiple roles per user)
@@ -316,7 +322,31 @@ CREATE TABLE return_requests (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 16. PERFORMANCE INDEXES FOR SEARCH & LOCATION
+-- 16. CONVERSATIONS TABLE
+CREATE TABLE conversations (
+    id SERIAL PRIMARY KEY,
+    customer_id INT REFERENCES users(id) ON DELETE CASCADE,
+    seller_id INT REFERENCES sellers(id) ON DELETE CASCADE,
+    product_id INT REFERENCES products(id) ON DELETE SET NULL,
+    order_id INT REFERENCES orders(id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 17. MESSAGES TABLE
+CREATE TABLE messages (
+    id SERIAL PRIMARY KEY,
+    conversation_id INT REFERENCES conversations(id) ON DELETE CASCADE,
+    sender_id INT REFERENCES users(id) ON DELETE CASCADE,
+    receiver_id INT REFERENCES users(id) ON DELETE CASCADE,
+    message TEXT NOT NULL,
+    image_url TEXT,
+    file_url TEXT,
+    read_status BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 18. PERFORMANCE INDEXES FOR SEARCH & LOCATION
 CREATE INDEX IF NOT EXISTS idx_users_pincode ON users(pincode);
 CREATE INDEX IF NOT EXISTS idx_user_locations_pincode ON user_locations(pincode);
 CREATE INDEX IF NOT EXISTS idx_sellers_pincode ON sellers(pincode);

@@ -52,7 +52,7 @@ export const ExploreView: React.FC = () => {
       </div>
 
       {/* Category Pills */}
-      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+      <div className="category-pills-container" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
         <button 
           onClick={() => setFilterState(prev => ({ ...prev, category: 'all' }))}
           className={`btn btn-sm ${filterState.category === 'all' ? 'btn-primary' : 'btn-outline'}`}
@@ -100,7 +100,7 @@ export const ExploreView: React.FC = () => {
                 alt={p.title} 
                 className="product-card-img" 
                 onClick={() => handleProductClick(p)} 
-                onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=800&auto=format&fit=crop&q=80'; }}
+                onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1612196808214-b7e239e5f6b7?w=800&auto=format&fit=crop&q=80'; }}
                 style={{ cursor: 'pointer' }} 
               />
               <div className="product-card-body">

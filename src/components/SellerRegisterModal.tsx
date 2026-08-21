@@ -40,12 +40,12 @@ export const SellerRegisterModal: React.FC = () => {
         </button>
 
         <div className="mb-6 flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
             <Store className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-2xl font-black text-white">Seller Sign Up</h2>
-            <p className="text-xs text-slate-400">Register your shop on LocalKart</p>
+            <h2 className="text-2xl font-black text-white">Become a LocalKart Seller</h2>
+            <p className="text-xs text-amber-400 font-semibold mt-0.5">Reach more customers and grow your local business.</p>
           </div>
         </div>
 

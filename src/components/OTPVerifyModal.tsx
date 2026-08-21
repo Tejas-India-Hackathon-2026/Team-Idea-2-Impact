@@ -1,12 +1,13 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { ArrowLeft, CheckCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, CheckCircle, RefreshCw, ShieldCheck } from 'lucide-react';
 
 export const OTPVerifyModal: React.FC = () => {
   const { phonePendingOtp, verifyOtp, sendOtp, setActiveScreen, requestedRole } = useApp();
   const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState<number>(60);
   
   const inputRefs = [
     useRef<HTMLInputElement>(null),
@@ -17,8 +18,54 @@ export const OTPVerifyModal: React.FC = () => {
     useRef<HTMLInputElement>(null)
   ];
 
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => {
+      setCooldown(prev => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
+  // WebOTP API Auto-Fill Handler for SMS OTPs on Android/browsers
+  useEffect(() => {
+    if ('OTPCredential' in window) {
+      const ac = new AbortController();
+      (navigator.credentials as any).get({
+        otp: { transport: ['sms'] },
+        signal: ac.signal
+      }).then((otp: any) => {
+        if (otp && otp.code) {
+          fillOtpCode(otp.code);
+        }
+      }).catch(() => {});
+      return () => ac.abort();
+    }
+  }, []);
+
+  const fillOtpCode = (pastedText: string) => {
+    const digits = pastedText.replace(/\D/g, '').slice(0, 6).split('');
+    if (digits.length > 0) {
+      const newDigits = ['', '', '', '', '', ''];
+      digits.forEach((d, i) => {
+        newDigits[i] = d;
+      });
+      setOtpDigits(newDigits);
+      const focusTargetIndex = Math.min(digits.length - 1, 5);
+      inputRefs[focusTargetIndex].current?.focus();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text');
+    fillOtpCode(pastedData);
+  };
+
   const handleDigitChange = (index: number, value: string) => {
-    if (value.length > 1) value = value.slice(-1);
+    if (value.length > 1) {
+      fillOtpCode(value);
+      return;
+    }
     const newDigits = [...otpDigits];
     newDigits[index] = value;
     setOtpDigits(newDigits);
@@ -38,7 +85,7 @@ export const OTPVerifyModal: React.FC = () => {
     e.preventDefault();
     const code = otpDigits.join('');
     if (code.length < 6) {
-      setErrorMsg('Please enter all 6 digits of the OTP code');
+      setErrorMsg('Please enter all 6 digits of the OTP.');
       return;
     }
     setIsLoading(true);
@@ -46,89 +93,114 @@ export const OTPVerifyModal: React.FC = () => {
     const success = await verifyOtp(code);
     setIsLoading(false);
     if (!success) {
-      setErrorMsg('Invalid OTP code. Please enter valid code (e.g. 123456).');
+      setErrorMsg('Invalid OTP code. Please check the code sent to your mobile phone.');
     }
   };
 
+  const handleResend = async () => {
+    if (cooldown > 0) return;
+    setCooldown(60);
+    setOtpDigits(['', '', '', '', '', '']);
+    setErrorMsg(null);
+    await sendOtp(phonePendingOtp || '+91 9876543210', requestedRole);
+  };
+
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0f172a', color: '#ffffff', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '24px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <div style={{ maxWidth: '440px', width: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        
-        <button
-          onClick={() => setActiveScreen('login_mobile')}
-          className="btn btn-outline"
-          style={{ width: 'fit-content', color: '#94a3b8', borderColor: '#334155', padding: '6px 14px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
-        >
-          <ArrowLeft size={16} /> Back
-        </button>
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-start pt-12 sm:pt-20 p-4 font-sans relative overflow-y-auto box-border">
+      {/* Background Glow */}
+      <div className="absolute -top-32 -left-32 w-80 h-80 bg-teal-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div>
-          <h2 style={{ fontSize: '28px', fontWeight: 900, color: '#ffffff', margin: '0 0 6px 0' }}>
-            Verify 6-Digit OTP
-          </h2>
-          <p style={{ fontSize: '14px', color: '#94a3b8', margin: 0 }}>
-            Enter OTP code sent to <strong style={{ color: '#4ade80' }}>{phonePendingOtp || 'your mobile number'}</strong>
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
-            {otpDigits.map((digit, index) => (
-              <input
-                key={index}
-                ref={inputRefs[index]}
-                type="text"
-                maxLength={1}
-                value={digit}
-                onChange={(e) => handleDigitChange(index, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(index, e)}
-                style={{ width: '48px', height: '56px', textAlign: 'center', fontSize: '22px', fontWeight: 900, backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '12px', color: '#ffffff', outline: 'none' }}
-                autoFocus={index === 0}
-              />
-            ))}
-          </div>
-
-          {errorMsg && <p style={{ color: '#ef4444', fontSize: '13px', fontWeight: 600, textAlign: 'center', margin: 0 }}>{errorMsg}</p>}
-
-          <div className="card" style={{ backgroundColor: 'rgba(22, 163, 74, 0.12)', borderColor: '#16a34a', padding: '10px', borderRadius: '10px', textAlign: 'center' }}>
-            <p style={{ fontSize: '12px', color: '#4ade80', margin: 0 }}>OTP Code: <strong style={{ color: '#ffffff' }}>123456</strong></p>
-          </div>
-
+      <div className="relative z-10 w-full max-w-[420px] mx-auto flex flex-col items-center transition-all box-border px-2 sm:px-0">
+        {/* Top Navigation */}
+        <div className="w-full flex items-center justify-start mb-4">
           <button
-            type="submit"
-            disabled={isLoading}
-            className="btn btn-primary"
-            style={{ width: '100%', padding: '14px', fontSize: '16px', fontWeight: 800, borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 14px rgba(22, 163, 74, 0.35)' }}
-          >
-            {isLoading ? (
-              <RefreshCw size={20} className="spin" />
-            ) : (
-              <>
-                <CheckCircle size={20} />
-                <span>Verify OTP & Continue</span>
-              </>
-            )}
-          </button>
-        </form>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', paddingTop: '8px' }}>
-          <button
-            type="button"
-            onClick={() => sendOtp(phonePendingOtp || '', requestedRole)}
-            style={{ background: 'none', border: 'none', color: '#4ade80', fontWeight: 700, cursor: 'pointer' }}
-          >
-            Resend OTP
-          </button>
-
-          <button
-            type="button"
             onClick={() => setActiveScreen('login_mobile')}
-            style={{ background: 'none', border: 'none', color: '#94a3b8', fontWeight: 600, cursor: 'pointer' }}
+            className="px-3.5 py-2 rounded-xl bg-slate-900 text-slate-300 hover:text-white flex items-center gap-2 text-xs sm:text-sm font-normal border border-slate-800 transition-colors shadow-md"
           >
-            Change Number
+            <ArrowLeft className="w-4 h-4" /> Back
           </button>
         </div>
 
+        {/* Card */}
+        <div className="w-full bg-slate-900/95 border border-teal-500/30 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-md space-y-6 box-border">
+          <div className="space-y-2 text-left">
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+              Enter OTP
+            </h2>
+            <p className="text-slate-300 text-xs sm:text-sm font-normal leading-relaxed">
+              We sent a 6-digit verification code to{' '}
+              <span className="font-semibold text-teal-400 tracking-wider block sm:inline mt-0.5 sm:mt-0">
+                {phonePendingOtp || '+91 98765 43210'}
+              </span>
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6 pt-2">
+            {/* 6 Digit Inputs Box with Paste Support */}
+            <div className="flex items-center justify-between gap-3 sm:gap-3.5" onPaste={handlePaste}>
+              {otpDigits.map((digit, index) => (
+                <input
+                  key={index}
+                  ref={inputRefs[index]}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  value={digit}
+                  onChange={(e) => handleDigitChange(index, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(index, e)}
+                  className="w-11 h-14 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold bg-slate-950 border border-teal-500/40 rounded-xl text-white focus:border-teal-400 focus:ring-2 focus:ring-teal-400/30 focus:outline-none transition-all shadow-inner"
+                  autoFocus={index === 0}
+                />
+              ))}
+            </div>
+
+            {errorMsg && <p className="text-rose-400 text-xs sm:text-sm font-normal text-center bg-rose-500/10 border border-rose-500/20 rounded-xl py-2 px-3">{errorMsg}</p>}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-12 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-semibold text-sm sm:text-base shadow-lg shadow-teal-950/60 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50 mt-2"
+            >
+              {isLoading ? (
+                <RefreshCw className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  <CheckCircle className="w-5 h-5" />
+                  <span>Verify OTP</span>
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Resend OTP & Change Number */}
+          <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs sm:text-sm">
+            <button
+              type="button"
+              disabled={cooldown > 0}
+              onClick={handleResend}
+              className={`font-semibold transition-colors ${
+                cooldown > 0 ? 'text-slate-500 cursor-not-allowed' : 'text-teal-400 hover:text-teal-300 underline'
+              }`}
+            >
+              {cooldown > 0 ? `Resend OTP in ${cooldown}s` : 'Resend OTP'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveScreen('login_mobile')}
+              className="text-slate-400 hover:text-slate-200 font-normal hover:underline"
+            >
+              Change Number
+            </button>
+          </div>
+        </div>
+
+        {/* Security Badge */}
+        <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-400">
+          <ShieldCheck className="w-4 h-4 text-teal-400 shrink-0" />
+          <span>Secure 100% Indian Hyperlocal OTP Verification</span>
+        </div>
       </div>
     </div>
   );

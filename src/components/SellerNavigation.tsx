@@ -81,11 +81,11 @@ export const SellerNavigation: React.FC = () => {
         </div>
       </header>
 
-      {/* MOBILE SELLER BOTTOM NAVIGATION (Section 15: Dashboard | Orders | Products | Search | More) */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-800 py-2 px-3 flex items-center justify-around font-sans">
+      {/* MOBILE SELLER BOTTOM NAVIGATION (Dashboard | Products | Orders | Earnings | Profile) */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900 border-t border-slate-800 py-1.5 px-3 flex items-center justify-around font-sans">
         <button
           onClick={() => setActiveScreen('seller_dashboard')}
-          className={`flex flex-col items-center gap-1 text-[11px] font-semibold ${
+          className={`flex flex-col items-center justify-center min-h-[44px] px-2 gap-1 text-[11px] font-semibold transition-colors ${
             activeScreen === 'seller_dashboard' ? 'text-amber-400' : 'text-slate-400'
           }`}
         >
@@ -94,18 +94,8 @@ export const SellerNavigation: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setActiveScreen('seller_orders')}
-          className={`flex flex-col items-center gap-1 text-[11px] font-semibold ${
-            activeScreen === 'seller_orders' ? 'text-amber-400' : 'text-slate-400'
-          }`}
-        >
-          <ShoppingCart className="w-5 h-5" />
-          <span>Orders</span>
-        </button>
-
-        <button
           onClick={() => setActiveScreen('seller_products')}
-          className={`flex flex-col items-center gap-1 text-[11px] font-semibold ${
+          className={`flex flex-col items-center justify-center min-h-[44px] px-2 gap-1 text-[11px] font-semibold transition-colors ${
             activeScreen === 'seller_products' ? 'text-amber-400' : 'text-slate-400'
           }`}
         >
@@ -114,23 +104,33 @@ export const SellerNavigation: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setActiveScreen('search')}
-          className={`flex flex-col items-center gap-1 text-[11px] font-semibold ${
-            activeScreen === 'search' ? 'text-amber-400' : 'text-slate-400'
+          onClick={() => setActiveScreen('seller_orders')}
+          className={`flex flex-col items-center justify-center min-h-[44px] px-2 gap-1 text-[11px] font-semibold transition-colors ${
+            activeScreen === 'seller_orders' ? 'text-amber-400' : 'text-slate-400'
           }`}
         >
-          <Search className="w-5 h-5" />
-          <span>Search</span>
+          <ShoppingCart className="w-5 h-5" />
+          <span>Orders</span>
         </button>
 
         <button
-          onClick={() => setShowMoreMobileMenu(!showMoreMobileMenu)}
-          className={`flex flex-col items-center gap-1 text-[11px] font-semibold ${
-            showMoreMobileMenu ? 'text-amber-400' : 'text-slate-400'
+          onClick={() => setActiveScreen('seller_earnings')}
+          className={`flex flex-col items-center justify-center min-h-[44px] px-2 gap-1 text-[11px] font-semibold transition-colors ${
+            activeScreen === 'seller_earnings' ? 'text-amber-400' : 'text-slate-400'
           }`}
         >
-          <MoreHorizontal className="w-5 h-5" />
-          <span>More</span>
+          <Wallet className="w-5 h-5" />
+          <span>Earnings</span>
+        </button>
+
+        <button
+          onClick={() => setActiveScreen('profile')}
+          className={`flex flex-col items-center justify-center min-h-[44px] px-2 gap-1 text-[11px] font-semibold transition-colors ${
+            activeScreen === 'profile' ? 'text-amber-400' : 'text-slate-400'
+          }`}
+        >
+          <UserCheck className="w-5 h-5" />
+          <span>Profile</span>
         </button>
       </div>
 

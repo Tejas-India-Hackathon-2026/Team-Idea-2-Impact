@@ -5,6 +5,7 @@ export type Screen =
   | 'login_mobile'
   | 'verify_otp'
   | 'role_select'
+  | 'customer_registration'
   | 'seller_registration'
   | 'delivery_registration'
   | 'continue_as'
