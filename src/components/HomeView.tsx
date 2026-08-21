@@ -43,7 +43,7 @@ export const HomeView: React.FC = () => {
   const recommendedProducts = products.slice(2, 8);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-4 space-y-8 text-white font-sans pb-24 box-border">
+    <div className="max-w-7xl mx-auto px-5 sm:px-6 md:px-8 py-4 space-y-8 text-white font-sans pb-24 box-border">
       
       <LocationPickerModal 
         isOpen={isLocationModalOpen}

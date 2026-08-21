@@ -49,7 +49,7 @@ export const ProductDetailsView: React.FC = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-4 space-y-6 text-white font-sans pb-28">
+    <div className="max-w-6xl mx-auto px-5 sm:px-6 md:px-8 py-4 space-y-6 text-white font-sans pb-28">
       
       {/* Top Back Navigation */}
       <div className="flex items-center justify-between">

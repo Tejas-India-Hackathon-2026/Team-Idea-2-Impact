@@ -14,7 +14,7 @@ export const SellerStoreView: React.FC = () => {
   const sellerStories = MOCK_LOCAL_STORIES.filter(s => s.sellerId === selectedSeller.id || s.sellerName === selectedSeller.storeName);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-4 space-y-6 text-white font-sans pb-24">
+    <div className="max-w-6xl mx-auto px-5 sm:px-6 md:px-8 py-4 space-y-6 text-white font-sans pb-24">
       {/* Top Back Navigation */}
       <div>
         <button
