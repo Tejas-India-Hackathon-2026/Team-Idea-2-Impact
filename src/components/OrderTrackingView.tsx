@@ -2,20 +2,22 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   ArrowLeft, Truck, MapPin, CheckCircle2, Clock, 
-  Store, AlertCircle, Sparkles, X, ShieldCheck, RefreshCw, Navigation as NavIcon, Star 
+  Store, AlertCircle, Sparkles, X, ShieldCheck, RefreshCw, Navigation as NavIcon, Star, RotateCcw 
 } from 'lucide-react';
 import { Order, Product } from '../types';
 import { ReviewFormModal } from './modals/ReviewFormModal';
+import { ReturnRequestModal } from './modals/ReturnRequestModal';
 
 export const OrderTrackingView: React.FC = () => {
-  const { orders, setActiveScreen, showNotification, addToCart, products } = useApp();
+  const { orders, setActiveScreen, showNotification, addToCart } = useApp();
   const [selectedOrder, setSelectedOrder] = useState<Order>(orders[0] || null);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState<boolean>(false);
   const [cancelReason, setCancelReason] = useState<string>('Changed my mind');
   const [isCancelling, setIsCancelling] = useState<boolean>(false);
 
-  // Review Modal State
+  // Review & Return Modal States
   const [reviewProduct, setReviewProduct] = useState<Product | null>(null);
+  const [returnProduct, setReturnProduct] = useState<Product | null>(null);
 
   if (!selectedOrder) {
     return (
@@ -243,9 +245,18 @@ export const OrderTrackingView: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+                  <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto flex-wrap">
                     <span className="text-sm font-extrabold text-white mr-2">₹{p.price * item.quantity}</span>
                     
+                    {isDelivered && (
+                      <button
+                        onClick={() => setReturnProduct(p)}
+                        className="px-3 py-1 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-bold flex items-center gap-1 shrink-0"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" /> Return / Report Issue
+                      </button>
+                    )}
+
                     {isDelivered && (
                       <button
                         onClick={() => setReviewProduct(p)}
@@ -364,6 +375,19 @@ export const OrderTrackingView: React.FC = () => {
           onClose={() => setReviewProduct(null)}
           onSubmitSuccess={() => {
             showNotification('✓ Review submitted successfully for delivered product!');
+          }}
+        />
+      )}
+
+      {/* RETURN REQUEST MODAL */}
+      {returnProduct && (
+        <ReturnRequestModal
+          product={returnProduct}
+          orderId={selectedOrder.id}
+          isOpen={!!returnProduct}
+          onClose={() => setReturnProduct(null)}
+          onSubmitSuccess={() => {
+            showNotification('✓ Return request submitted & under review!');
           }}
         />
       )}
