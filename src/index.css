@@ -307,6 +307,25 @@ button, input, select, textarea {
   background-color: rgba(74, 222, 128, 0.1);
 }
 
+.btn-danger {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+.btn-danger:hover {
+  background-color: #dc2626;
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: #cbd5e1;
+}
+
+.btn-ghost:hover {
+  background-color: #1e293b;
+  color: #ffffff;
+}
+
 .btn-block {
   width: 100%;
 }
