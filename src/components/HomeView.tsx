@@ -93,31 +93,31 @@ export const HomeView: React.FC = () => {
         {/* Card Content */}
         <div className="p-3 flex-1 flex flex-col justify-between space-y-2">
           <div>
-            <div className="flex items-center justify-between text-[10px] text-slate-400 mb-0.5">
-              <span className="truncate max-w-[100px] font-medium text-slate-400">by {p.sellerName}</span>
-              <span className="text-amber-400 font-bold flex items-center gap-0.5">
+            <div className="flex items-center justify-between text-[11px] text-slate-400 mb-1 gap-1">
+              <span className="truncate max-w-[110px] font-medium text-slate-400">by {p.sellerName}</span>
+              <span className="text-amber-400 font-bold flex items-center gap-0.5 shrink-0">
                 ★ {p.rating || 4.8}
               </span>
             </div>
             <h4 
               onClick={() => handleProductClick(p)} 
-              className="text-xs font-semibold text-white truncate cursor-pointer hover:text-emerald-400 transition-colors"
+              className="text-xs font-semibold text-white leading-snug line-clamp-2 cursor-pointer hover:text-emerald-400 transition-colors"
               title={p.title}
             >
               {p.title}
             </h4>
           </div>
 
-          <div className="flex items-center justify-between pt-1 border-t border-slate-800/80">
-            <div>
-              <span className="text-xs font-extrabold text-emerald-400">₹{p.price}</span>
+          <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 gap-1">
+            <div className="min-w-0">
+              <span className="text-xs sm:text-sm font-extrabold text-emerald-400">₹{p.price}</span>
               {p.originalPrice && (
                 <span className="text-[10px] text-slate-500 line-through ml-1">₹{p.originalPrice}</span>
               )}
             </div>
             <button 
               onClick={() => addToCart(p)} 
-              className="px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-[11px] shadow-md shadow-emerald-950/40 transition-colors active:scale-95 flex items-center gap-1"
+              className="px-2.5 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-[11px] shadow-md shadow-emerald-950/40 transition-colors active:scale-95 flex items-center gap-1 shrink-0"
             >
               <ShoppingBag className="w-3 h-3" />
               <span>Add</span>

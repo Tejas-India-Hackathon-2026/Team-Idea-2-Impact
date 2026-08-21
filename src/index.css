@@ -70,6 +70,8 @@ html, body {
   margin: 0;
   padding: 0;
   font-family: var(--font-family);
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 body {
@@ -94,42 +96,46 @@ button {
 button, input, select, textarea {
   font-family: inherit;
   font-size: inherit;
+  line-height: 1.4;
 }
 
-/* Typography Hierarchy Helper Classes */
+/* Typography Hierarchy Helper Classes — Clean & Non-Overlapping */
 .heading-hero {
-  font-size: clamp(26px, 4vw, 36px);
-  line-height: 1.25;
+  font-size: clamp(24px, 4vw, 34px);
+  line-height: 1.35;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
 }
 
 .heading-section {
-  font-size: clamp(19px, 2.5vw, 24px);
-  line-height: 1.3;
+  font-size: clamp(18px, 2.5vw, 22px);
+  line-height: 1.4;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: normal;
+  margin-bottom: 6px;
 }
 
 .heading-card {
-  font-size: clamp(15px, 2vw, 18px);
-  line-height: 1.35;
+  font-size: clamp(14px, 2vw, 16px);
+  line-height: 1.4;
   font-weight: 600;
 }
 
 .text-body-main {
   font-size: clamp(13px, 1.5vw, 15px);
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .text-caption {
   font-size: clamp(11px, 1.2vw, 13px);
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
 .btn-text {
   font-size: clamp(13px, 1.4vw, 15px);
   font-weight: 700;
+  line-height: 1.4;
 }
 
 /* App Viewport Layout */
