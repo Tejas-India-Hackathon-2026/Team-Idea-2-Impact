@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   ArrowLeft, Truck, MapPin, CheckCircle2, Clock, 
-  Store, AlertCircle, Sparkles, X, ShieldCheck, RefreshCw, Navigation as NavIcon, Star, RotateCcw 
+  Store, AlertCircle, Sparkles, X, ShieldCheck, RefreshCw, Navigation as NavIcon, Star, RotateCcw, MessageSquare 
 } from 'lucide-react';
 import { Order, Product } from '../types';
 import { ReviewFormModal } from './modals/ReviewFormModal';
@@ -93,6 +93,11 @@ export const OrderTrackingView: React.FC = () => {
     setActiveScreen('cart');
   };
 
+  const handleOpenOrderChat = () => {
+    setActiveScreen('chat');
+    showNotification(`✓ Opened chat conversation for Order #${selectedOrder.id}!`);
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 space-y-6 font-sans text-white pb-28 min-h-screen">
       
@@ -134,6 +139,13 @@ export const OrderTrackingView: React.FC = () => {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleOpenOrderChat}
+              className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md flex items-center gap-1.5"
+            >
+              <MessageSquare className="w-3.5 h-3.5" /> Chat with Seller
+            </button>
+
             {isEligibleForCancellation && !isCancelled && (
               <button
                 onClick={() => setIsCancelModalOpen(true)}

@@ -4,7 +4,7 @@ import { ProductCard } from './cards/ProductCard';
 import { 
   ArrowLeft, Heart, ShoppingBag, Star, MapPin, CheckCircle2, 
   Store, Truck, ShieldCheck, MessageCircle, Flag, ChevronRight, 
-  Sparkles, Check, AlertCircle, Play, Image as ImageIcon, Video, Filter, ThumbsUp 
+  Sparkles, Check, AlertCircle, Play, Image as ImageIcon, Video, Filter, ThumbsUp, MessageSquare 
 } from 'lucide-react';
 import { Product, Seller } from '../types';
 import { ReviewFormModal } from './modals/ReviewFormModal';
@@ -141,6 +141,11 @@ export const ProductDetailsView: React.FC = () => {
     setActiveScreen('cart');
   };
 
+  const handleOpenSellerChat = () => {
+    setActiveScreen('chat');
+    showNotification(`✓ Opened chat conversation with ${seller.storeName}!`);
+  };
+
   const handleReportReview = (revId: string) => {
     showNotification(`Review #${revId} reported to LocalKart moderation team.`);
   };
@@ -162,7 +167,6 @@ export const ProductDetailsView: React.FC = () => {
     showNotification('✓ Verified review submitted & ratings updated!');
   };
 
-  // Filter reviews
   const filteredReviews = reviewList.filter((r) => {
     if (reviewFilter === 'media') return (r.photos && r.photos.length > 0) || r.videoUrl;
     if (reviewFilter === 'verified') return r.verifiedPurchase;
@@ -232,10 +236,7 @@ export const ProductDetailsView: React.FC = () => {
           )}
 
           {/* Seller Store Info Card */}
-          <div 
-            onClick={() => { setSelectedSeller(seller); setActiveScreen('seller_store'); }}
-            className="bg-slate-900 border border-slate-800 hover:border-emerald-500/40 rounded-2xl p-4 cursor-pointer transition-all flex items-center justify-between shadow-xl"
-          >
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 transition-all flex items-center justify-between shadow-xl">
             <div className="flex items-center gap-3">
               <img src={seller.avatar} alt={seller.storeName} className="w-12 h-12 rounded-xl object-cover border border-slate-700 shrink-0" />
               <div>
@@ -247,9 +248,20 @@ export const ProductDetailsView: React.FC = () => {
               </div>
             </div>
 
-            <span className="text-xs font-bold text-emerald-400 hover:underline flex items-center gap-1">
-              Store <ChevronRight className="w-3.5 h-3.5" />
-            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleOpenSellerChat}
+                className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md flex items-center gap-1"
+              >
+                <MessageSquare className="w-3.5 h-3.5" /> Chat
+              </button>
+              <button
+                onClick={() => { setSelectedSeller(seller); setActiveScreen('seller_store'); }}
+                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold border border-slate-700 flex items-center gap-1"
+              >
+                Store <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
 

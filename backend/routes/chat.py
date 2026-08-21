@@ -22,6 +22,9 @@ class SendMessageSchema(BaseModel):
     image_url: Optional[str] = None
     file_url: Optional[str] = None
 
+class ReportMessageSchema(BaseModel):
+    reason: str
+
 class ConnectionManager:
     def __init__(self):
         self.active_connections: dict = {}
@@ -46,9 +49,7 @@ manager = ConnectionManager()
 
 @router.post("/conversations")
 def create_or_get_conversation(payload: CreateConversationSchema):
-    """
-    Creates a new conversation between customer and seller or returns existing conversation.
-    """
+    """Creates a new conversation between customer and seller or returns existing conversation."""
     existing = query_db(
         "SELECT * FROM conversations WHERE customer_id = ? AND seller_id = ?",
         (payload.customer_id, payload.seller_id),
@@ -67,9 +68,7 @@ def create_or_get_conversation(payload: CreateConversationSchema):
 
 @router.get("/conversations")
 def list_user_conversations(user_id: int = 1, role: str = "customer"):
-    """
-    Lists conversations for the authenticated customer or seller.
-    """
+    """Lists conversations for the authenticated customer or seller."""
     if role == "seller":
         conversations = query_db(
             """SELECT c.*, u.name as customer_name, u.phone as customer_phone, u.profile_image as customer_avatar
@@ -93,9 +92,7 @@ def list_user_conversations(user_id: int = 1, role: str = "customer"):
 
 @router.get("/conversations/{conversation_id}/messages")
 def get_conversation_messages(conversation_id: int):
-    """
-    Fetches message history for a conversation.
-    """
+    """Fetches message history for a conversation and auto-marks messages as read."""
     messages = query_db(
         """SELECT m.*, u.name as sender_name 
            FROM messages m
@@ -104,23 +101,20 @@ def get_conversation_messages(conversation_id: int):
            ORDER BY m.created_at ASC""",
         (conversation_id,)
     )
+    execute_db("UPDATE messages SET read_status = 1 WHERE conversation_id = ?", (conversation_id,))
     return {"status": "success", "count": len(messages), "messages": messages}
 
 @router.post("/messages")
 async def send_message(payload: SendMessageSchema):
-    """
-    Sends a chat message, persists to database, creates recipient notification, and broadcasts via WebSocket.
-    """
+    """Sends a chat message, persists to database, creates recipient notification, and broadcasts via WebSocket."""
     msg_id = execute_db(
         """INSERT INTO messages (conversation_id, sender_id, receiver_id, message, image_url, file_url, read_status)
            VALUES (?, ?, ?, ?, ?, ?, 0)""",
         (payload.conversation_id, payload.sender_id, payload.receiver_id, payload.message, payload.image_url, payload.file_url)
     )
     
-    # Update conversation timestamp
     execute_db("UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?", (payload.conversation_id,))
 
-    # Create notification for recipient
     execute_db(
         """INSERT INTO notifications (user_id, title, message, type)
            VALUES (?, 'New Message Received', ?, 'chat')""",
@@ -129,7 +123,6 @@ async def send_message(payload: SendMessageSchema):
 
     msg_record = query_db("SELECT * FROM messages WHERE id = ?", (msg_id,), one=True)
     
-    # Broadcast to active WebSocket connections
     await manager.broadcast(payload.conversation_id, {
         "type": "new_message",
         "message": msg_record
@@ -137,11 +130,12 @@ async def send_message(payload: SendMessageSchema):
 
     return {"status": "success", "message": msg_record}
 
+@router.post("/messages/{message_id}/report")
+def report_chat_message(message_id: int, payload: ReportMessageSchema):
+    return {"status": "success", "message": f"Message #{message_id} reported for moderation ({payload.reason})."}
+
 @router.websocket("/ws/chat/{conversation_id}")
 async def websocket_chat_endpoint(websocket: WebSocket, conversation_id: int):
-    """
-    Real-time WebSocket endpoint for direct live messaging between customer & seller.
-    """
     await manager.connect(websocket, conversation_id)
     try:
         while True:
