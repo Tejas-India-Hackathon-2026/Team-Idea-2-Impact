@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently -k -p \"[{name}]\" -c \"cyan.bold,green.bold\" -n \"FRONTEND,BACKEND\" \"npm run frontend\" \"npm run backend\"",
-    "frontend": "vite --port 3001",
+    "frontend": "vite --port 3000",
     "backend": "node scripts/start-backend.cjs",
     "build": "tsc && vite build",
     "preview": "vite preview"

@@ -48,12 +48,12 @@ export const UnifiedSearchBar: React.FC<SearchBarProps> = ({
       </div>
 
       {activeRole === 'customer' && (
-        <div className="mt-2 flex items-center justify-between text-xs text-slate-400 px-1">
-          <div className="flex items-center gap-1.5 truncate">
+        <div className="mt-2 flex items-center justify-between gap-2 text-xs text-slate-400 px-1 max-w-full overflow-hidden">
+          <div className="flex items-center gap-1.5 min-w-0 truncate">
             <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <span>Searching near <strong className="text-slate-200">{currentLocation}</strong></span>
+            <span className="truncate">Searching near <strong className="text-slate-200">{currentLocation}</strong></span>
           </div>
-          <span className="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-500/20 px-2 py-0.5 rounded-full font-semibold">
+          <span className="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-500/20 px-2 py-0.5 rounded-full font-semibold shrink-0">
             Nearby Prioritized
           </span>
         </div>

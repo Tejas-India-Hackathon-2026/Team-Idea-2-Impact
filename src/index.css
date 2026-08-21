@@ -544,6 +544,36 @@ button, input, select, textarea {
   overflow-y: auto;
 }
 
+/* Responsive Map Component */
+.responsive-map {
+  width: 100%;
+  height: 300px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+@media (min-width: 768px) {
+  .responsive-map {
+    height: 420px;
+  }
+}
+
+/* Centered Mobile Form & Auth Container */
+.auth-card-wrapper {
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+img, video, iframe {
+  max-width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
 /* Footer */
 .site-footer {
   background-color: #0f172a;
@@ -584,13 +614,19 @@ button, input, select, textarea {
   }
   .product-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    gap: 10px;
   }
   .card {
     padding: 14px;
   }
   .modal-content {
     padding: 16px;
+    max-width: calc(100vw - 24px);
+  }
+  .footer-inner {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
   }
 }
 
@@ -605,10 +641,14 @@ button, input, select, textarea {
   .product-img, .product-card-img {
     max-height: 130px;
   }
+  .heading-hero {
+    font-size: clamp(20px, 6vw, 26px);
+  }
 }
 
-@media (max-width: 360px) {
+@media (max-width: 350px) {
   .product-grid {
     grid-template-columns: 1fr;
   }
 }
+
