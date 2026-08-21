@@ -86,48 +86,6 @@ export const SELLERS: Seller[] = [
   }
 ];
 
-export const MOCK_LOCAL_STORIES: any[] = [
-  {
-    id: 'v1',
-    title: 'Handcrafted Terracotta Clay Shaping Process',
-    thumbnail: 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=800&auto=format&fit=crop&q=80',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-potter-shaping-a-clay-vase-on-a-spinning-wheel-41484-large.mp4',
-    duration: '0:45',
-    sellerId: 's1',
-    sellerName: 'Riya Handicrafts',
-    sellerAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-    productName: 'Terracotta Flower Vase',
-    viewsCount: 1420,
-    likesCount: 380
-  },
-  {
-    id: 'v2',
-    title: 'Morning Organic Honey Harvest at GreenEarth',
-    thumbnail: 'https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=800&auto=format&fit=crop&q=80',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-hands-holding-a-honeycomb-full-of-bees-41485-large.mp4',
-    duration: '1:12',
-    sellerId: 's2',
-    sellerName: 'GreenEarth Farms',
-    sellerAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    productName: 'Wildflower Forest Honey',
-    viewsCount: 2890,
-    likesCount: 710
-  },
-  {
-    id: 'v3',
-    title: 'Traditional Handloom Pit Weaving Demonstration',
-    thumbnail: 'https://images.unsplash.com/photo-1606744837616-56c9a5c6a6eb?w=800&auto=format&fit=crop&q=80',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-woman-weaving-on-a-manual-loom-41486-large.mp4',
-    duration: '0:58',
-    sellerId: 's3',
-    sellerName: 'Thread & Loom Studio',
-    sellerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    productName: 'Handloom Linen Kurta',
-    viewsCount: 940,
-    likesCount: 290
-  }
-];
-
 export const PRODUCTS: Product[] = [
   {
     id: 'p1',
@@ -142,8 +100,6 @@ export const PRODUCTS: Product[] = [
     images: [
       'https://images.unsplash.com/photo-1612196808214-b7e239e5f6b7?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&auto=format&fit=crop&q=80'
     ],
     description: 'Sculpted by hand using natural riverbed clay. Hand-painted with traditional geometric motifs. Perfect for indoor dried flowers or decorative corner accent.',
     sellerId: 's1',
@@ -171,7 +127,6 @@ export const PRODUCTS: Product[] = [
     images: [
       'https://images.unsplash.com/photo-1587049352847-4a222e784d38?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=800&auto=format&fit=crop&q=80'
     ],
     description: 'Unprocessed, unfiltered 100% pure raw honey harvested directly from ethical bee farms near the Western Ghats. Rich in natural antioxidants and enzymes.',
     sellerId: 's2',
@@ -199,7 +154,6 @@ export const PRODUCTS: Product[] = [
     images: [
       'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&auto=format&fit=crop&q=80',
       'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1606744837616-56c9a5c6a6eb?w=800&auto=format&fit=crop&q=80'
     ],
     description: 'Breathable 100% natural organic cotton linen fabric woven on traditional pit looms. Wooden button detail and relaxed modern tailored fit.',
     sellerId: 's3',
@@ -227,7 +181,7 @@ export const PRODUCTS: Product[] = [
     category: 'manufacturing',
     images: [
       'https://images.unsplash.com/photo-1590794056226-79ef3a8147e1?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1544816155-12df9643f363?w=800&auto=format&fit=crop&q=80',
     ],
     description: 'Handcrafted from reclaimed teakwood treated with food-grade beeswax. Features ergonomic carved handle and natural grain finish.',
     sellerId: 's4',
@@ -254,7 +208,7 @@ export const PRODUCTS: Product[] = [
     category: 'pottery',
     images: [
       'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1577937927133-66ef06acdf18?w=800&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1577937927133-66ef06acdf18?w=800&auto=format&fit=crop&q=80',
     ],
     description: 'Speckled stoneware ceramic coffee mugs with matte reactive glaze finish. Microwave and dishwasher safe.',
     sellerId: 's1',
@@ -280,7 +234,7 @@ export const PRODUCTS: Product[] = [
     locality: 'HSR Layout',
     category: 'plants',
     images: [
-      'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=800&auto=format&fit=crop&q=80'
+      'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=800&auto=format&fit=crop&q=80',
     ],
     description: 'Pesticide-free hydroponically grown Genovese Italian basil, rosemary, and mint bundle harvested on morning of delivery.',
     sellerId: 's2',

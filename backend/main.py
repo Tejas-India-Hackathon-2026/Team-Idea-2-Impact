@@ -34,20 +34,12 @@ from backend.routes.chat import router as chat_router
 from backend.routes.uploads import router as uploads_router
 from backend.routes.payments import router as payments_router
 from backend.routes.location import router as location_router
-from backend.database import init_db
 
 app = FastAPI(
     title="LocalKart FastAPI Backend",
     description="Production-Ready Hyperlocal E-Commerce Platform APIs with Firebase Authentication, PostgreSQL Database & Role-Based Access Control",
     version="3.0.0"
 )
-
-@app.on_event("startup")
-def on_startup():
-    try:
-        init_db()
-    except Exception as e:
-        print(f"[Startup Notice] DB init: {e}")
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3001")
 allowed_origins = [

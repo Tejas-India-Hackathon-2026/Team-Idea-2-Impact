@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { ArrowLeft, ShieldCheck, ArrowRight, Sparkles, Mail, Lock, User as UserIcon, Check, Eye, EyeOff, Store, Truck, ShoppingBag } from 'lucide-react';
-import { Role } from '../types';
+import { ArrowLeft, ShieldCheck, ArrowRight, Sparkles, Mail, Phone, Lock, User as UserIcon, Check, Eye, EyeOff } from 'lucide-react';
 
 export const LoginModal: React.FC = () => {
-  const { loginWithEmail, signupWithEmail, setActiveScreen, requestedRole, authMode, startLoginFlow, startSignUpFlow } = useApp();
+  const { loginWithEmail, signupWithEmail, setActiveScreen, authMode, startLoginFlow, startSignUpFlow } = useApp();
+  
+  // Login Tab Switcher State: 'email' vs 'phone'
+  const [loginTab, setLoginTab] = useState<'email' | 'phone'>('email');
+  
   const [name, setName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
+  const [phone, setPhone] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
-  const [signupRole, setSignupRole] = useState<Role>(requestedRole || 'customer');
   
   // Password visibility state
   const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -35,27 +38,50 @@ export const LoginModal: React.FC = () => {
     e.preventDefault();
     setErrorMsg(null);
 
-    // Email format validation
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!emailRegex.test(email.trim())) {
-      setErrorMsg('Please enter a valid email address (e.g. user@example.com).');
-      return;
-    }
-
     if (isLogin) {
+      if (loginTab === 'email') {
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        if (!emailRegex.test(email.trim())) {
+          setErrorMsg('Please enter a valid email address.');
+          return;
+        }
+      } else {
+        const phoneClean = phone.replace(/\D/g, '');
+        if (phoneClean.length < 10) {
+          setErrorMsg('Please enter a valid 10-digit mobile number.');
+          return;
+        }
+      }
+
       if (!password) {
         setErrorMsg('Please enter your password.');
         return;
       }
+
       setIsLoading(true);
-      const res = await loginWithEmail(email.trim(), password);
+      const identifier = loginTab === 'email' ? email.trim() : phone.trim();
+      const res = await loginWithEmail(identifier, password);
       setIsLoading(false);
+
       if (!res.success) {
-        setErrorMsg(res.message || 'Invalid email address or password.');
+        setErrorMsg(res.message || 'Invalid login credentials. Please check and try again.');
       }
     } else {
+      // Customer Signup Validation
       if (!name.trim()) {
         setErrorMsg('Please enter your full name.');
+        return;
+      }
+
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      if (!emailRegex.test(email.trim())) {
+        setErrorMsg('Please enter a valid email address.');
+        return;
+      }
+
+      const phoneClean = phone.replace(/\D/g, '');
+      if (phoneClean.length < 10) {
+        setErrorMsg('Please enter a valid 10-digit phone number.');
         return;
       }
 
@@ -70,8 +96,9 @@ export const LoginModal: React.FC = () => {
       }
 
       setIsLoading(true);
-      const res = await signupWithEmail(name.trim(), email.trim(), password, signupRole);
+      const res = await signupWithEmail(name.trim(), email.trim(), password, 'customer', phone.trim());
       setIsLoading(false);
+
       if (!res.success) {
         setErrorMsg(res.message || 'Failed to create account.');
       }
@@ -104,68 +131,46 @@ export const LoginModal: React.FC = () => {
               <span>{isLogin ? 'Welcome Back' : 'Create Account'}</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white mb-1">
-              {isLogin ? 'Login to LocalKart' : 'Sign Up for LocalKart'}
+              {isLogin ? 'Login to LocalKart' : 'Create your LocalKart account'}
             </h2>
             <p className="text-slate-400 text-xs font-normal leading-normal">
               {isLogin
-                ? 'Enter your registered email address and password.'
-                : 'Select your account type, enter your details, and set a password.'}
+                ? 'Enter your email or phone number and password to continue (NO OTP required).'
+                : 'Fill in your details below to create your customer account.'}
             </p>
           </div>
 
+          {/* Login Email vs Phone Tab Switcher */}
+          {isLogin && (
+            <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 mb-3">
+              <button
+                type="button"
+                onClick={() => { setLoginTab('email'); setErrorMsg(null); }}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                  loginTab === 'email'
+                    ? 'bg-teal-500 text-slate-950 shadow-md'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Mail className="w-3.5 h-3.5" />
+                <span>Email Login</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setLoginTab('phone'); setErrorMsg(null); }}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                  loginTab === 'phone'
+                    ? 'bg-teal-500 text-slate-950 shadow-md'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Phone className="w-3.5 h-3.5" />
+                <span>Phone Login</span>
+              </button>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-3">
-            {/* 3 PLATFORMS SELECTION (For Sign Up) */}
-            {!isLogin && (
-              <div className="space-y-1.5">
-                <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider">
-                  Select Your Account Platform (3 Options)
-                </label>
-                <div className="grid grid-cols-3 gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setSignupRole('customer')}
-                    className={`p-2 rounded-xl border flex flex-col items-center justify-center text-center transition-all ${
-                      signupRole === 'customer'
-                        ? 'bg-teal-500/20 border-teal-400 text-teal-300 shadow-md ring-1 ring-teal-400/50'
-                        : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
-                    }`}
-                  >
-                    <ShoppingBag className="w-4 h-4 mb-1 shrink-0" />
-                    <span className="text-[11px] font-bold leading-tight">Customer</span>
-                    <span className="text-[9px] opacity-75 font-normal">Buy Products</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setSignupRole('seller')}
-                    className={`p-2 rounded-xl border flex flex-col items-center justify-center text-center transition-all ${
-                      signupRole === 'seller'
-                        ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300 shadow-md ring-1 ring-emerald-400/50'
-                        : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
-                    }`}
-                  >
-                    <Store className="w-4 h-4 mb-1 shrink-0" />
-                    <span className="text-[11px] font-bold leading-tight">Seller</span>
-                    <span className="text-[9px] opacity-75 font-normal">Sell & Shop</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setSignupRole('delivery')}
-                    className={`p-2 rounded-xl border flex flex-col items-center justify-center text-center transition-all ${
-                      signupRole === 'delivery'
-                        ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-md ring-1 ring-cyan-400/50'
-                        : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white hover:border-slate-700'
-                    }`}
-                  >
-                    <Truck className="w-4 h-4 mb-1 shrink-0" />
-                    <span className="text-[11px] font-bold leading-tight">Delivery</span>
-                    <span className="text-[9px] opacity-75 font-normal">Deliver & Earn</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
             {!isLogin && (
               <div>
                 <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
@@ -186,23 +191,46 @@ export const LoginModal: React.FC = () => {
               </div>
             )}
 
-            <div>
-              <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-                Email Address
-              </label>
-              <div className="flex items-center h-10 bg-slate-950 border border-teal-500/30 rounded-xl overflow-hidden px-3 focus-within:border-teal-400 focus-within:ring-1 focus-within:ring-teal-400/30 transition-all">
-                <Mail className="w-4 h-4 text-teal-400 mr-2 shrink-0" />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
-                  className="w-full h-full bg-transparent text-white placeholder-slate-500 text-xs focus:outline-none"
-                  required
-                  autoFocus={isLogin}
-                />
+            {(isLogin ? loginTab === 'email' : true) && (
+              <div>
+                <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                  Email Address
+                </label>
+                <div className="flex items-center h-10 bg-slate-950 border border-teal-500/30 rounded-xl overflow-hidden px-3 focus-within:border-teal-400 focus-within:ring-1 focus-within:ring-teal-400/30 transition-all">
+                  <Mail className="w-4 h-4 text-teal-400 mr-2 shrink-0" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="name@example.com"
+                    className="w-full h-full bg-transparent text-white placeholder-slate-500 text-xs focus:outline-none"
+                    required={isLogin && loginTab === 'email'}
+                    autoFocus={isLogin && loginTab === 'email'}
+                  />
+                </div>
               </div>
-            </div>
+            )}
+
+            {(isLogin ? loginTab === 'phone' : true) && (
+              <div>
+                <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                  Phone Number
+                </label>
+                <div className="flex items-center h-10 bg-slate-950 border border-teal-500/30 rounded-xl overflow-hidden px-3 focus-within:border-teal-400 focus-within:ring-1 focus-within:ring-teal-400/30 transition-all">
+                  <span className="text-xs font-bold text-teal-400 mr-2 shrink-0">+91</span>
+                  <input
+                    type="tel"
+                    maxLength={10}
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                    placeholder="98765 43210"
+                    className="w-full h-full bg-transparent text-white placeholder-slate-500 text-xs focus:outline-none font-mono"
+                    required={isLogin && loginTab === 'phone'}
+                    autoFocus={isLogin && loginTab === 'phone'}
+                  />
+                </div>
+              </div>
+            )}
 
             <div>
               <div className="flex items-center justify-between mb-1">
@@ -331,7 +359,7 @@ export const LoginModal: React.FC = () => {
                 <span>{isLogin ? 'Logging in...' : 'Creating Account...'}</span>
               ) : (
                 <>
-                  <span>{isLogin ? 'Login' : `Sign Up as ${signupRole.toUpperCase()}`}</span>
+                  <span>{isLogin ? 'Login' : 'Create Account'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -350,7 +378,7 @@ export const LoginModal: React.FC = () => {
                   }}
                   className="text-xs font-semibold text-teal-400 hover:underline ml-1"
                 >
-                  Sign Up
+                  Create Account
                 </button>
               </span>
             ) : (
@@ -374,7 +402,7 @@ export const LoginModal: React.FC = () => {
         {/* Security Badge */}
         <div className="mt-2 flex items-center justify-center gap-1.5 text-xs text-slate-400">
           <ShieldCheck className="w-3.5 h-3.5 text-teal-400 shrink-0" />
-          <span>Secure Encrypted Password Authentication</span>
+          <span>Secure Encrypted Password Authentication (NO OTP)</span>
         </div>
       </div>
     </div>

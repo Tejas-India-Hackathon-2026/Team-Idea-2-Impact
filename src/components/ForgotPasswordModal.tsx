@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { ArrowLeft, KeyRound, CheckCircle2, ShieldCheck, Mail, Lock, Check, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, KeyRound, CheckCircle2, ShieldCheck, Mail, Phone, Lock, Check, Eye, EyeOff } from 'lucide-react';
 
 export const ForgotPasswordModal: React.FC = () => {
   const { setActiveScreen, showNotification, forgotPassword, resetPassword } = useApp();
-  const [email, setEmail] = useState<string>('');
+  const [identifier, setIdentifier] = useState<string>('');
   const [step, setStep] = useState<'request' | 'reset'>('request');
-  const [resetToken, setResetToken] = useState<string>('');
   const [newPassword, setNewPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [showNewPassword, setShowNewPassword] = useState<boolean>(false);
@@ -14,7 +13,6 @@ export const ForgotPasswordModal: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // Live Password Validation Checklist Criteria
   const pwdReqs = {
@@ -29,22 +27,20 @@ export const ForgotPasswordModal: React.FC = () => {
 
   const handleRequestReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.includes('@')) {
-      setErrorMsg('Please enter a valid email address.');
+    if (!identifier.trim()) {
+      setErrorMsg('Please enter your email or phone number.');
       return;
     }
     setErrorMsg(null);
     setIsLoading(true);
 
-    const res = await forgotPassword(email);
+    const res = await forgotPassword(identifier.trim());
     setIsLoading(false);
 
     if (res.success) {
-      setSuccessMsg('Reset token generated! Enter your token below to set your new password.');
-      if (res.token) setResetToken(res.token);
       setStep('reset');
     } else {
-      setErrorMsg(res.message || 'Failed to generate reset link.');
+      setErrorMsg(res.message || 'No account found with this email or phone number.');
     }
   };
 
@@ -63,14 +59,14 @@ export const ForgotPasswordModal: React.FC = () => {
     }
 
     setIsLoading(true);
-    const success = await resetPassword(email, resetToken, newPassword);
+    const success = await resetPassword(identifier.trim(), 'reset_token', newPassword);
     setIsLoading(false);
 
     if (success) {
       showNotification('✓ Password reset successfully! Please login with your new password.');
       setActiveScreen('login_mobile');
     } else {
-      setErrorMsg('Invalid token or reset failed.');
+      setErrorMsg('Password reset failed. Please try again.');
     }
   };
 
@@ -95,7 +91,7 @@ export const ForgotPasswordModal: React.FC = () => {
             </div>
             <div>
               <h2 className="text-lg font-bold tracking-tight text-white">Forgot Password</h2>
-              <p className="text-slate-400 text-xs font-normal">Reset your LocalKart password via email token.</p>
+              <p className="text-slate-400 text-xs font-normal">Reset your LocalKart password securely (NO OTP).</p>
             </div>
           </div>
 
@@ -103,15 +99,15 @@ export const ForgotPasswordModal: React.FC = () => {
             <form onSubmit={handleRequestReset} className="space-y-3 pt-1">
               <div>
                 <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-                  Registered Email Address
+                  Registered Email or Phone Number
                 </label>
                 <div className="flex items-center h-10 bg-slate-950 border border-teal-500/30 rounded-xl overflow-hidden px-3 focus-within:border-teal-400 transition-all">
                   <Mail className="w-4 h-4 text-teal-400 mr-2 shrink-0" />
                   <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@example.com"
+                    type="text"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    placeholder="name@example.com or +91 98765 43210"
                     className="w-full h-full bg-transparent text-white placeholder-slate-500 text-xs focus:outline-none"
                     required
                     autoFocus
@@ -130,30 +126,14 @@ export const ForgotPasswordModal: React.FC = () => {
                 disabled={isLoading}
                 className="w-full h-11 rounded-xl bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs shadow-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
               >
-                {isLoading ? 'Sending Token...' : 'Get Reset Token'}
+                {isLoading ? 'Verifying Account...' : 'Continue to Reset Password'}
               </button>
             </form>
           ) : (
             <form onSubmit={handleConfirmReset} className="space-y-3 pt-1">
-              {successMsg && (
-                <p className="text-teal-400 text-xs font-normal bg-teal-500/10 border border-teal-500/20 rounded-xl py-1.5 px-3">
-                  {successMsg}
-                </p>
-              )}
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-                  Reset Token
-                </label>
-                <input
-                  type="text"
-                  value={resetToken}
-                  onChange={(e) => setResetToken(e.target.value)}
-                  placeholder="Enter 32-character token"
-                  className="w-full h-9 px-3 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-xs font-mono focus:outline-none focus:border-teal-400"
-                  required
-                />
-              </div>
+              <p className="text-teal-400 text-xs font-normal bg-teal-500/10 border border-teal-500/20 rounded-xl py-1.5 px-3">
+                Account verified for: <strong>{identifier}</strong>. Set your new password below.
+              </p>
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
@@ -264,7 +244,7 @@ export const ForgotPasswordModal: React.FC = () => {
                 className="w-full h-11 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs sm:text-sm shadow-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Reset Password & Login</span>
+                <span>Update Password & Login</span>
               </button>
             </form>
           )}
@@ -272,7 +252,7 @@ export const ForgotPasswordModal: React.FC = () => {
 
         <div className="mt-2 flex items-center justify-center gap-1.5 text-xs text-slate-400">
           <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
-          <span>LocalKart Password Security Standard</span>
+          <span>LocalKart Password Reset Standard (NO OTP)</span>
         </div>
       </div>
     </div>

@@ -33,7 +33,7 @@ export const AdminDashboardView: React.FC = () => {
       <div className="card">
         <h2 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-dark)', marginBottom: '12px' }}>Seller Verification Requests</h2>
         {sellers.map(s => (
-          <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '10px' }}>
+          <div key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px', marginBottom: '10px' }}>
             <div>
               <strong>{s.storeName}</strong>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Seller: {s.name} | Location: {s.locality}</div>

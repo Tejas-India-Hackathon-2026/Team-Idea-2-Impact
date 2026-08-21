@@ -69,7 +69,7 @@ export const AuthWelcomeModal: React.FC = () => {
           </div>
 
           {/* PARTNER OPPORTUNITIES LINKS */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+          <div className="grid grid-cols-2 gap-3 pt-1">
             <button
               onClick={() => selectRoleForSignUp('seller')}
               className="py-2.5 px-3 rounded-xl bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/40 text-xs font-semibold text-slate-200 hover:text-emerald-300 flex items-center justify-center gap-2 transition-all active:scale-95 group"

@@ -68,6 +68,18 @@ class User:
         return None, "Authentication credentials invalid"
 
     @staticmethod
+    def reset_password(email_or_phone, new_password):
+        """Resets user's password using email or phone identifier without OTP."""
+        clean = User.normalize_phone(email_or_phone) if ('@' not in email_or_phone) else email_or_phone
+        user = query_db("SELECT id FROM users WHERE email = ? OR phone = ?", (clean, clean), one=True)
+        if not user:
+            return False, "Account with this email address or phone number was not found."
+        
+        hashed_password = generate_password_hash(new_password)
+        execute_db("UPDATE users SET password = ? WHERE id = ?", (hashed_password, user['id']))
+        return True, "Password reset successfully. You can now login with your new password."
+
+    @staticmethod
     def find_by_phone(phone):
         """Finds user by phone number."""
         clean_phone = User.normalize_phone(phone)
