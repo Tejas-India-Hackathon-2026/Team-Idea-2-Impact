@@ -2,16 +2,20 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   ArrowLeft, Truck, MapPin, CheckCircle2, Clock, 
-  Store, AlertCircle, Sparkles, X, ShieldCheck, RefreshCw, Navigation as NavIcon 
+  Store, AlertCircle, Sparkles, X, ShieldCheck, RefreshCw, Navigation as NavIcon, Star 
 } from 'lucide-react';
-import { Order } from '../types';
+import { Order, Product } from '../types';
+import { ReviewFormModal } from './modals/ReviewFormModal';
 
 export const OrderTrackingView: React.FC = () => {
-  const { orders, setActiveScreen, showNotification, addToCart } = useApp();
+  const { orders, setActiveScreen, showNotification, addToCart, products } = useApp();
   const [selectedOrder, setSelectedOrder] = useState<Order>(orders[0] || null);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState<boolean>(false);
   const [cancelReason, setCancelReason] = useState<string>('Changed my mind');
   const [isCancelling, setIsCancelling] = useState<boolean>(false);
+
+  // Review Modal State
+  const [reviewProduct, setReviewProduct] = useState<Product | null>(null);
 
   if (!selectedOrder) {
     return (
@@ -239,12 +243,22 @@ export const OrderTrackingView: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
-                    <span className="text-sm font-extrabold text-white">₹{p.price * item.quantity}</span>
+                  <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+                    <span className="text-sm font-extrabold text-white mr-2">₹{p.price * item.quantity}</span>
+                    
+                    {isDelivered && (
+                      <button
+                        onClick={() => setReviewProduct(p)}
+                        className="px-3 py-1 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold flex items-center gap-1 shrink-0"
+                      >
+                        <Star className="w-3.5 h-3.5 fill-amber-400" /> Rate Product
+                      </button>
+                    )}
+
                     {isDelivered && (
                       <button
                         onClick={() => handleBuyAgain(item)}
-                        className="px-3 py-1 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md"
+                        className="px-3 py-1 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs shadow-md shrink-0"
                       >
                         Buy Again
                       </button>
@@ -339,6 +353,19 @@ export const OrderTrackingView: React.FC = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* REVIEW FORM MODAL */}
+      {reviewProduct && (
+        <ReviewFormModal
+          product={reviewProduct}
+          orderId={selectedOrder.id}
+          isOpen={!!reviewProduct}
+          onClose={() => setReviewProduct(null)}
+          onSubmitSuccess={() => {
+            showNotification('✓ Review submitted successfully for delivered product!');
+          }}
+        />
       )}
 
     </div>
